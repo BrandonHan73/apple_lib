@@ -1,7 +1,13 @@
-package apple_lib.network;
+package apple_lib.network.layer;
 
 import java.util.Random;
 
+/**
+ * Generic network layer
+ *
+ * Usage
+ *  - Implement the activation function and its derivative
+ */
 public abstract class ANN_Layer {
 
 	/////////////////////////////// STATIC FIELDS //////////////////////////////

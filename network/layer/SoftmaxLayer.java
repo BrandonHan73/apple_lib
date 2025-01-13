@@ -1,4 +1,4 @@
-package apple_lib.network;
+package apple_lib.network.layer;
 
 /**
  * Network layer using the logistic function for activation

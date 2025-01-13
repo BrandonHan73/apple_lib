@@ -177,6 +177,7 @@ public class SimplexSolver implements LP_Solver {
 
 	//////////////////////////////// OVERRIDING ////////////////////////////////
 
+	@Override
 	public void subject_to(double... params) {
 		if(params.length != variable_count + 1) {
 			throw new RuntimeException(String.format("%d values expected, %d given", variable_count + 1, params.length));
@@ -190,6 +191,7 @@ public class SimplexSolver implements LP_Solver {
 		constraint_count++;
 	}
 
+	@Override
 	public void maximize(double... params) {
 		if(params.length != variable_count) {
 			throw new RuntimeException(String.format("%d coefficients expected, %d given", variable_count, params.length));
@@ -201,6 +203,7 @@ public class SimplexSolver implements LP_Solver {
 		}
 	}
 
+	@Override
 	public void minimize(double... params) {
 		if(params.length != variable_count) {
 			throw new RuntimeException(String.format("%d coefficients expected, %d given", variable_count, params.length));
@@ -212,6 +215,7 @@ public class SimplexSolver implements LP_Solver {
 		}
 	}
 
+	@Override
 	public boolean solve() {
 		load_dictionary();
 		infeasible = false;
@@ -237,6 +241,7 @@ public class SimplexSolver implements LP_Solver {
 		return false;
 	}
 
+	@Override
 	public boolean is_infeasible() {
 		if(!infeasible && !unbounded && params == null) {
 			throw new RuntimeException("Solve problem before polling solution");
@@ -244,6 +249,7 @@ public class SimplexSolver implements LP_Solver {
 		return infeasible;
 	}
 
+	@Override
 	public boolean is_unbounded() {
 		if(!infeasible && !unbounded && params == null) {
 			throw new RuntimeException("Solve problem before polling solution");
@@ -251,6 +257,7 @@ public class SimplexSolver implements LP_Solver {
 		return unbounded;
 	}
 
+	@Override
 	public double value() {
 		if(!infeasible && !unbounded && params == null) {
 			throw new RuntimeException("Solve problem before polling solution");
@@ -261,6 +268,7 @@ public class SimplexSolver implements LP_Solver {
 		return minimize ? -output : output;
 	}
 
+	@Override
 	public double[][] parameters() {
 		if(!infeasible && !unbounded && params == null) {
 			throw new RuntimeException("Solve problem before polling solution");

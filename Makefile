@@ -1,7 +1,7 @@
 
 util_obj = out/apple_lib/utility/*.class
 env_obj = out/apple_lib/environment/*.class
-network_obj = out/apple_lib/network/*.class
+network_obj = out/apple_lib/network/layer/*.class
 
 objects = $(util_obj) $(env_obj) $(network_obj) 
 

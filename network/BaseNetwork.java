@@ -47,7 +47,12 @@ public abstract class BaseNetwork {
 		layers = new ANN_Layer[layer_count];
 		Class[] layer_types = get_layer_types(layer_sizes);
 		for(int layer = 0; layer < layer_count; layer++) {
-			Constructor<ANN_Layer> constructor = layer_types[layer].getConstructor(int.class, int.class);
+			Constructor<ANN_Layer> constructor;
+			try {
+				constructor = layer_types[layer].getConstructor(int.class, int.class);
+			} catch(NoSuchMethodException nsme) {
+				throw new RuntimeException(nsme.getLocalizedMessage());
+			}
 
 			try {
 				layers[layer] = constructor.newInstance(sizes[layer], sizes[layer + 1]);

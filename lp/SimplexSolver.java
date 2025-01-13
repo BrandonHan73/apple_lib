@@ -120,6 +120,10 @@ public class SimplexSolver implements LP_Solver {
 
 			dictionary[con][variable_count + constraint_count] = constraint[variable_count];
 		}
+
+		for(int var = 0; var < variable_count; var++) {
+			dictionary[constraint_count][var] = minimize ? -objective[var] : objective[var];
+		}
 	}
 
 	/**
@@ -265,7 +269,7 @@ public class SimplexSolver implements LP_Solver {
 		if(infeasible || unbounded) {
 			throw new RuntimeException("Attempted to poll infeasible/unbounded solution");
 		}
-		return minimize ? -output : output;
+		return minimize ? output : -output;
 	}
 
 	@Override

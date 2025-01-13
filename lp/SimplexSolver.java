@@ -231,6 +231,7 @@ public class SimplexSolver implements LP_Solver {
 			pivot(enter, exit);
 		}
 		output = dictionary[dictionary_rows - 1][dictionary_cols - 1];
+		params = new double[0][];
 
 		dictionary = null;
 		return false;

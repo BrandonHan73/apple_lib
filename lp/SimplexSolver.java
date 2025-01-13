@@ -186,6 +186,7 @@ public class SimplexSolver implements LP_Solver {
 		for(int var = 0; var < variable_count + 1; var++) {
 			constraint[var] = params[var];
 		}
+		constraints.add(constraint);
 		constraint_count++;
 	}
 

@@ -91,14 +91,18 @@ public class SimplexSolver implements LP_Solver {
 			throw new RuntimeException(String.format("Exiting index %d is invalid for %d basic variables", exit, constraint_count));
 		}
 
+		// Extract pivot value from dictionary
 		double pivot_value = dictionary[exit][enter];
 		if(pivot_value == 0) {
 			throw new RuntimeException("Cannot use zero for pivot value");
 		}
+
+		// Divide pivot row by pivot value
 		for(int col = 0; col < dictionary_cols; col++) {
 			dictionary[exit][col] /= pivot_value;
 		}
 
+		// Setting pivot column to zero (in all rows except the pivot row)
 		for(int row = 0; row < dictionary_rows; row++) {
 			if(row == exit) continue;
 
@@ -108,6 +112,7 @@ public class SimplexSolver implements LP_Solver {
 			}
 		}
 
+		// Record which value entered the basis
 		basis[exit] = enter;
 	}
 
@@ -130,25 +135,31 @@ public class SimplexSolver implements LP_Solver {
 	protected void initialize_dictionary_values() {
 		basis = new int[constraint_count];
 
+		// Iterate through constraints
 		for(int con = 0; con < constraint_count; con++) {
+			// Add corresponding slack variable to the basis
 			basis[con] = slack_index + con;
 
+			// Copy coefficients to dictionary
 			double[] constraint = constraints.get(con);
-
 			for(int var = 0; var < variable_count; var++) {
 				dictionary[con][var] = constraint[var];;
 			}
 
+			// Set corresponding slack variable and zero all others
 			for(int slack = 0; slack < constraint_count; slack++) {
 				dictionary[con][slack_index + slack] = con == slack ? 1 : 0;
 			}
 
+			// Set upper bound for constraint
 			dictionary[con][constant_index] = constraint[variable_count];
 		}
 
+		// Load objective function to dictionary
 		for(int var = 0; var < variable_count; var++) {
 			dictionary[objective_index][var] = minimize ? -objective[var] : objective[var];
 		}
+		// Initialize basis variable coefficients and negated output to zero
 		for(int var = variable_count; var < dictionary_cols; var++) {
 			dictionary[objective_index][var] = 0;
 		}
@@ -175,6 +186,8 @@ public class SimplexSolver implements LP_Solver {
 			throw new RuntimeException("Attempted to select enter variable while not solving a problem");
 		}
 
+		// Find the variable in the objective function with the largest positive
+		// coefficient
 		double best = 0;
 		int index = -1;
 		for(int col = 0; col < constant_index; col++) {
@@ -200,16 +213,26 @@ public class SimplexSolver implements LP_Solver {
 			throw new RuntimeException(String.format("Entering index %d is invalid for %d columns", enter, dictionary_cols));
 		}
 
+		// Find the basic variable whose non-negativity poses the greatest
+		// constraint on the given variable
 		double best = 0;
 		int index = -1;
 		for(int row = 0; row < objective_index; row++) {
+			// Ignore non-positive coefficients
 			double check = dictionary[row][enter];
+			if(check <= 0) continue;
+
 			double base = dictionary[row][constant_index];
-			if(index == -1 && check > 0) {
+
+			// If no variable has been found yet, accept the current one
+			if(index == -1) {
 				best = base / check;
 				index = row;
+				continue;
 			}
 
+			// Accept current basic variable if it is more constraining than the
+			// current output
 			double curr = base / check;
 			if(curr < best) {
 				best = curr;
@@ -226,12 +249,15 @@ public class SimplexSolver implements LP_Solver {
 	protected void update() {
 		int enter, exit;
 		while(true) {
+			// Select a variable to enter the basis
 			enter = select_enter();
 			if(enter == -1) break;
 
+			// Select and corresponding basic variable to replace
 			exit = select_exit(enter);
 			if(exit == -1) break;
 
+			// Pivot
 			pivot(enter, exit);
 		}
 	}
@@ -265,6 +291,7 @@ public class SimplexSolver implements LP_Solver {
 		for(int var = 0; var < variable_count; var++) {
 			objective[var] = params[var];
 		}
+		minimize = false;
 	}
 
 	@Override
@@ -277,6 +304,7 @@ public class SimplexSolver implements LP_Solver {
 		for(int var = 0; var < variable_count; var++) {
 			objective[var] = -params[var];
 		}
+		minimize = true;
 	}
 
 	@Override

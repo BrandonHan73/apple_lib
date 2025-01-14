@@ -62,7 +62,11 @@ the output of the optimized objective function as follows.
     double optimized_value = solver.value()
 
 Attempting to access the optimized value if the solver failed 
-(i.e. `success == false`) will result in a RuntimeException. 
+(i.e. `success == false`) will result in a RuntimeException. Use corresponding
+methods to determine the exact cause of failure. 
+
+    boolean unbounded = solver.is_unbounded();
+    boolean infeasible = solver.is_infeasible();
 
 Future implementations will allow users to access the solution set in reduced
 row echilon form through `solver.parameters`. However this has not been

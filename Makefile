@@ -1,19 +1,18 @@
 
-util_obj = out/apple_lib/utility/*.class
-env_obj = out/apple_lib/environment/*.class
-network_obj = out/apple_lib/network/*.class out/apple_lib/network/layer/*.class
-lp_obj = out/apple_lib/lp/*.class
+sources = $(wildcard **/*.java)
 
-objects = $(util_obj) $(env_obj) $(network_obj) $(lp_obj)
+objects = $(patsubst %.java,apple_lib/%.class,$(sources))
 
 class_path = ..
 
 apple_lib.jar: $(objects)
 	@echo Creating jar file...
-	@$(MAKE) -C out
-	@mv out/apple_lib.jar .
+	@jar cf apple_lib.jar apple_lib/
 
-out/apple_lib/%.class: %.java
+clean:
+	@rm -rf apple_lib/
+
+apple_lib/%.class: %.java
 	@echo Compiling $@
-	@javac -d out/ -cp $(class_path) $<
+	@javac -d . -cp $(class_path) $<
 

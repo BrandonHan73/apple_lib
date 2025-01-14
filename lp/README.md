@@ -17,6 +17,8 @@ be used.
 
 ## Usage
 
+### Initialization
+
 Initialize a solver as follows. 
 
 `LP_Solver solver = new TwoPhaseSolver(4);`
@@ -24,6 +26,8 @@ Initialize a solver as follows.
 Constructor takes one argument representing the total number of variables
 defined by the problem statement (i.e. exclude things like slack variables). 
 Here we have created a solver that will handle four variables. 
+
+### Problem definition
 
 Define the objective function as follows. 
 
@@ -37,14 +41,18 @@ objective function will override past definitions.
 
 Add constraints as follows. 
 
-`solver.subject_to( 0.5, -5.5, -2.5, 9, 0 );`
-`solver.subject_to( 0.5, -1.5, -0.5, 1, 0 );`
-`solver.subject_to(   1,    0,    0, 0, 1 );`
+`
+solver.subject_to( 0.5, -5.5, -2.5, 9, 0 );
+solver.subject_to( 0.5, -1.5, -0.5, 1, 0 );
+solver.subject_to(   1,    0,    0, 0, 1 );
+`
 
 Parameters again represent the coefficients of the respective variables. The
 last variable represents an upper bound for the constraint. In this case, the
 first bound corresponds to `0.5w - 5.5x - 2.5y + 9z <= 0`. Constraints cannot
 be removed. 
+
+### Solving
 
 Load the solutions using the following. 
 

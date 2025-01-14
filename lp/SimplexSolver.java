@@ -19,25 +19,31 @@ public class SimplexSolver implements LP_Solver {
 	public final int variable_count;
 
 	/* Total number of constraints */
-	private int constraint_count;
+	protected int constraint_count;
 
 	/* Constraints */
-	private List<double[]> constraints;
+	protected List<double[]> constraints;
 
 	/* Objective function. Assumes maximization. */
-	private double[] objective;
+	protected double[] objective;
 
 	/* Distinguishes minimization from maximization */
-	private boolean minimize;
+	protected boolean minimize;
 
 	/* Stores output for collection. Assumes maximization. */
-	private boolean infeasible, unbounded;
-	private double[][] params;
-	private double output;
+	protected boolean infeasible, unbounded;
+	protected double[][] params;
+	protected double output;
 
 	/* Dictionary used for calculations */
-	private int dictionary_rows, dictionary_cols;
-	private double[][] dictionary;
+	protected int dictionary_rows, dictionary_cols;
+	protected double[][] dictionary;
+
+	/* Indices for the dictionary */
+	protected int slack_index, constant_index, objective_index;
+
+	/* Stores which basic variable each dictionary line represents */
+	protected int[] basis;
 
 	/////////////////////////////// CONSTRUCTORS ///////////////////////////////
 
@@ -61,6 +67,12 @@ public class SimplexSolver implements LP_Solver {
 		dictionary = null;
 		dictionary_rows = -1;
 		dictionary_cols = -1;
+
+		slack_index = -1;
+		constant_index = -1;
+		objective_index = -1;
+
+		basis = null;
 	}
 
 	////////////////////////////////// METHODS /////////////////////////////////
@@ -68,15 +80,15 @@ public class SimplexSolver implements LP_Solver {
 	/**
 	 * Performs a pivot. 
 	 */
-	private void pivot(int enter, int exit) {
+	protected void pivot(int enter, int exit) {
 		if(dictionary == null) {
 			throw new RuntimeException("Attempted to pivot while not solving a problem");
 		}
-		if(enter < 0 || dictionary_cols <= enter) {
-			throw new RuntimeException(String.format("Entering index %d is invalid for %d columns", enter, dictionary_cols));
+		if(enter < 0 || constant_index <= enter) {
+			throw new RuntimeException(String.format("Entering index %d is invalid for %d variables", enter, constant_index));
 		}
-		if(exit < 0 || dictionary_rows <= exit) {
-			throw new RuntimeException(String.format("Exiting index %d is invalid for %d rows", exit, dictionary_rows));
+		if(exit < 0 || constraint_count <= exit) {
+			throw new RuntimeException(String.format("Exiting index %d is invalid for %d basic variables", exit, constraint_count));
 		}
 
 		double pivot_value = dictionary[exit][enter];
@@ -95,19 +107,32 @@ public class SimplexSolver implements LP_Solver {
 				dictionary[row][col] -= dictionary[exit][col] * pivot_value;
 			}
 		}
+
+		basis[exit] = enter;
 	}
 
 	/**
-	 * Initializes dictionary variable based on the current constraints and
-	 * objective
+	 * Sets all dictionary variables related to indices and sizes. 
 	 */
-	private void load_dictionary() {
-		dictionary_rows = constraint_count + 1;
-		dictionary_cols = variable_count + constraint_count + 1;
+	protected void initialize_dictionary_hyperparameters() {
+		slack_index = variable_count;
+		constant_index = slack_index + constraint_count;
+		dictionary_cols = constant_index + 1;
 
-		dictionary = new double[dictionary_rows][dictionary_cols];
-		
+		objective_index = constraint_count;
+		dictionary_rows = objective_index + 1;
+	}
+
+	/**
+	 * Assumes hyperparameters are set and dictionary has been allocated. Loads
+	 * dictionary with values. 
+	 */
+	protected void initialize_dictionary_values() {
+		basis = new int[constraint_count];
+
 		for(int con = 0; con < constraint_count; con++) {
+			basis[con] = slack_index + con;
+
 			double[] constraint = constraints.get(con);
 
 			for(int var = 0; var < variable_count; var++) {
@@ -115,30 +140,45 @@ public class SimplexSolver implements LP_Solver {
 			}
 
 			for(int slack = 0; slack < constraint_count; slack++) {
-				dictionary[con][variable_count + slack] = con == slack ? 1 : 0;
+				dictionary[con][slack_index + slack] = con == slack ? 1 : 0;
 			}
 
-			dictionary[con][variable_count + constraint_count] = constraint[variable_count];
+			dictionary[con][constant_index] = constraint[variable_count];
 		}
 
 		for(int var = 0; var < variable_count; var++) {
-			dictionary[constraint_count][var] = minimize ? -objective[var] : objective[var];
+			dictionary[objective_index][var] = minimize ? -objective[var] : objective[var];
 		}
+		for(int var = variable_count; var < dictionary_cols; var++) {
+			dictionary[objective_index][var] = 0;
+		}
+	}
+
+	/**
+	 * Initializes dictionary variable based on the current constraints and
+	 * objective
+	 */
+	protected void load_dictionary() {
+		initialize_dictionary_hyperparameters();
+
+		dictionary = new double[dictionary_rows][dictionary_cols];
+		
+		initialize_dictionary_values();
 	}
 
 	/**
 	 * Selects a variable to enter the basis. If no viable candidates exist,
 	 * returns -1.
 	 */
-	private int select_enter() {
+	protected int select_enter() {
 		if(dictionary == null) {
 			throw new RuntimeException("Attempted to select enter variable while not solving a problem");
 		}
 
 		double best = 0;
 		int index = -1;
-		for(int col = 0; col < dictionary_cols - 1; col++) {
-			double curr = dictionary[dictionary_rows - 1][col];
+		for(int col = 0; col < constant_index; col++) {
+			double curr = dictionary[objective_index][col];
 			if(curr > best) {
 				best = curr;
 				index = col;
@@ -152,24 +192,25 @@ public class SimplexSolver implements LP_Solver {
 	 * Given the variable that will enter the basis, selects a row to exit the
 	 * basis. Returns -1 if no viable candidates exist. 
 	 */
-	private int select_exit(int enter) {
+	protected int select_exit(int enter) {
 		if(dictionary == null) {
 			throw new RuntimeException("Attempted to select exit variable while not solving a problem");
 		}
-		if(enter < 0 || dictionary_cols - 1 <= enter) {
+		if(enter < 0 || constant_index <= enter) {
 			throw new RuntimeException(String.format("Entering index %d is invalid for %d columns", enter, dictionary_cols));
 		}
 
 		double best = 0;
 		int index = -1;
-		for(int row = 0; row < dictionary_rows - 1; row++) {
+		for(int row = 0; row < objective_index; row++) {
 			double check = dictionary[row][enter];
+			double base = dictionary[row][constant_index];
 			if(index == -1 && check > 0) {
-				best = check;
+				best = base / check;
 				index = row;
 			}
 
-			double curr = dictionary[row][dictionary_cols - 1] / check;
+			double curr = base / check;
 			if(curr < best) {
 				best = curr;
 				index = row;
@@ -179,12 +220,31 @@ public class SimplexSolver implements LP_Solver {
 		return index;
 	}
 
+	/**
+	 * Repeatedly updates the dictionary until no further updates are possible
+	 */
+	protected void update() {
+		int enter, exit;
+		while(true) {
+			enter = select_enter();
+			if(enter == -1) break;
+
+			exit = select_exit(enter);
+			if(exit == -1) break;
+
+			pivot(enter, exit);
+		}
+	}
+
 	//////////////////////////////// OVERRIDING ////////////////////////////////
 
 	@Override
 	public void subject_to(double... params) {
 		if(params.length != variable_count + 1) {
 			throw new RuntimeException(String.format("%d values expected, %d given", variable_count + 1, params.length));
+		}
+		if(params[variable_count] < 0) {
+			throw new RuntimeException("Origin must be a feasible solution");
 		}
 
 		double[] constraint = new double[variable_count + 1];
@@ -224,25 +284,21 @@ public class SimplexSolver implements LP_Solver {
 		load_dictionary();
 		infeasible = false;
 		unbounded = false;
+		params = null;
 
-		int enter, exit;
-		while(true) {
-			enter = select_enter();
-			if(enter == -1) break;
+		update();
 
-			exit = select_exit(enter);
-			if(exit == -1) {
+		output = dictionary[objective_index][constant_index];
+		params = new double[0][];
+
+		for(int var = 0; var < constant_index; var++) {
+			if(dictionary[objective_index][var] > 0) {
 				unbounded = true;
 				break;
 			}
-
-			pivot(enter, exit);
 		}
-		output = dictionary[dictionary_rows - 1][dictionary_cols - 1];
-		params = new double[0][];
 
-		dictionary = null;
-		return false;
+		return !infeasible && !unbounded;
 	}
 
 	@Override
@@ -266,8 +322,11 @@ public class SimplexSolver implements LP_Solver {
 		if(!infeasible && !unbounded && params == null) {
 			throw new RuntimeException("Solve problem before polling solution");
 		}
-		if(infeasible || unbounded) {
-			throw new RuntimeException("Attempted to poll infeasible/unbounded solution");
+		if(infeasible) {
+			throw new RuntimeException("Attempted to poll infeasible solution");
+		}
+		if(unbounded) {
+			throw new RuntimeException("Attempted to poll unbounded solution");
 		}
 		return minimize ? output : -output;
 	}
@@ -277,8 +336,11 @@ public class SimplexSolver implements LP_Solver {
 		if(!infeasible && !unbounded && params == null) {
 			throw new RuntimeException("Solve problem before polling solution");
 		}
-		if(infeasible || unbounded) {
-			throw new RuntimeException("Attempted to describe infeasible/unbounded solution");
+		if(infeasible) {
+			throw new RuntimeException("Attempted to describe infeasible solution");
+		}
+		if(unbounded) {
+			throw new RuntimeException("Attempted to describe unbounded solution");
 		}
 
 		double[][] out = new double[params.length][];

@@ -21,7 +21,7 @@ be used.
 
 Initialize a solver as follows. 
 
-`LP_Solver solver = new TwoPhaseSolver(4);`
+    LP_Solver solver = new TwoPhaseSolver(4);
 
 Constructor takes one argument representing the total number of variables
 defined by the problem statement (i.e. exclude things like slack variables). 
@@ -31,7 +31,7 @@ Here we have created a solver that will handle four variables.
 
 Define the objective function as follows. 
 
-`solver.maximize(10, -57, -9, -24);`
+    solver.maximize(10, -57, -9, -24);
 
 Each parameters represents the coefficient of the respective variable. The
 objective function in this case will be `f = 10w - 57x - 9y - 24z`. The
@@ -41,11 +41,9 @@ objective function will override past definitions.
 
 Add constraints as follows. 
 
-`
-solver.subject_to( 0.5, -5.5, -2.5, 9, 0 );
-solver.subject_to( 0.5, -1.5, -0.5, 1, 0 );
-solver.subject_to(   1,    0,    0, 0, 1 );
-`
+    solver.subject_to( 0.5, -5.5, -2.5, 9, 0 );
+    solver.subject_to( 0.5, -1.5, -0.5, 1, 0 );
+    solver.subject_to(   1,    0,    0, 0, 1 );
 
 Parameters again represent the coefficients of the respective variables. The
 last variable represents an upper bound for the constraint. In this case, the
@@ -56,12 +54,12 @@ be removed.
 
 Load the solutions using the following. 
 
-`boolean success = solver.solve();`
+    boolean success = solver.solve();
 
 The solver will return true if a feasible, unbounded solution was found. Access
 the output of the optimized objective function as follows. 
 
-`double optimized_value = solver.value()`
+    double optimized_value = solver.value()
 
 Attempting to access the optimized value if the solver failed 
 (i.e. `success == false`) will result in a RuntimeException. 

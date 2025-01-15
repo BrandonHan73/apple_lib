@@ -1,7 +1,7 @@
 
-sources = $(wildcard **/*.java)
+sources = $(shell find . -name *.java)
 
-objects = $(patsubst %.java,apple_lib/%.class,$(sources))
+objects = $(patsubst ./%.java,apple_lib/%.class,$(sources))
 
 class_path = ..
 

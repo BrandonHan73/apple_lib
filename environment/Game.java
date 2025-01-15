@@ -1,109 +1,41 @@
 package apple_lib.environment;
 
 /**
- * Superclass used for defining a game environment. 
- *
- * Required capabilities:
- *  - Provide a current state
- *  - Define each player's possible actions
- *  - Update the state given the players' action choice
- *
- * Usage:
- *  - Define an enum for player actions and define the options for each player
- *  - Define a state and initialize the state
- *  - Create the clone function
+ * Models a game environment. Generalized for partially observable stochastic
+ * games. 
  */
-public abstract class Game implements Cloneable {
-
-	////////////////////////////////// FIELDS //////////////////////////////////
-
-	/* Stores the current state of the environment */
-	protected State state;
-
-	/* Number of players participating in this game */
-	protected int player_count;
-
-	/////////////////////////////// CONSTRUCTORS ///////////////////////////////
+public interface Game {
 
 	/**
-	 * Sets the player_count field. State field is initialized to null
+	 * Returns the simulator to its initial state
 	 */
-	public Game(int players) {
-		player_count = players;
-		state = null;
-	}
-
-	///////////////////////////////// ABSTRACT /////////////////////////////////
+	public void initialize();
 
 	/**
-	 * Provide all possible actions for a given player. Return value should be
-	 * consistent across all calls, regardless of game state. 
+	 * Sets a given player's action for the next cycle
 	 */
-	public abstract Enum[] options_for(int player);
+	public void load_action(int player, int action);
 
 	/**
-	 * Updates the game and provides rewards for each player
+	 * Updates the game based on loaded joint action. Returns rewards for each
+	 * player. 
 	 */
-	public abstract double[] update(ActionSet actions);
+	public void update();
 
 	/**
-	 * Resets the environment to the initial state
+	 * Returns an observation for the given player. 
 	 */
-	public abstract void initialize();
-
-	////////////////////////////////// METHODS /////////////////////////////////
+	public double[] observe(int player);
 
 	/**
-	 * Returns a copy of the current state
+	 * Returns the reward presented to the given player in the last update cycle
 	 */
-	public State get_state() {
-		try {
-			return (State) state.clone();
-		} catch(CloneNotSupportedException cnse) {
-			throw new RuntimeException("Could not clone state object");
-		}
-	}
+	public double reward(int player);
 
 	/**
-	 * Creates an action set associated with this game
+	 * Indicates whether the game has reached a terminal state. 
 	 */
-	public ActionSet create_action_set(Enum[] actions) {
-		return new ActionSet(this, actions);
-	}
-
-	/**
-	 * Checks whether the specified player can perform the given action. Returns
-	 * -1 if the action cannot be performed. Otherwise, returns the index in
-	 *  the options_for list. 
-	 */
-	public int check_action(int player, Enum action) {
-		Enum[] choices = options_for(player);
-		for(int i = 0; i < choices.length; i++) {
-			if(choices[i] == action) {
-				return i;
-			}
-		}
-		return -1;
-	}
-
-	/**
-	 * Provides the player count for this game
-	 */
-	public int player_count() {
-		return player_count;
-	}
-
-	//////////////////////////////// OVERRIDING ////////////////////////////////
-
-	@Override
-	public Object clone() throws CloneNotSupportedException {
-		Game out = (Game) super.clone();
-
-		out.player_count = player_count;
-		out.state = (State) state.clone();
-
-		return out;
-	}
+	public boolean is_complete();
 
 }
 

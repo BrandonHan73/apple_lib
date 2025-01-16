@@ -20,7 +20,7 @@ public class ANN_Layer {
 	private static final Random rng = new Random();
 
 	/* Default learning rate */
-	public static double default_learning_rate = 0.0001;
+	public static double default_learning_rate = 0.01;
 
 	////////////////////////////////// FIELDS //////////////////////////////////
 
@@ -215,7 +215,7 @@ public class ANN_Layer {
 		last_y = new double[output_count];
 		for(int o = 0; o < output_count; o++) {
 			if(Double.isFinite(y[o]) == false) {
-				throw new RuntimeException(String.format("Output %d is %s and not finite", o, Double.toString(y[o])));
+				throw new RuntimeException(String.format("Output %d of activation function %s is %s and not finite", o, activation.getClass().getName(), Double.toString(y[o])));
 			}
 			last_y[o] = y[o];
 		}

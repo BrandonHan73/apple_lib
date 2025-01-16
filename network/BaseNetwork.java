@@ -9,10 +9,9 @@ import apple_lib.network.layer.ANN_Layer;
  * Standard structure for an artificial neural network. 
  *
  * Usage:
- *  - Implement the get_layer_types method to define the network structure
  *  - Network layers used must have constructor taking two integers
  */
-public abstract class BaseNetwork {
+public class BaseNetwork {
 
 	////////////////////////////////// FIELDS //////////////////////////////////
 
@@ -45,37 +44,28 @@ public abstract class BaseNetwork {
 		output_count = sizes[layer_count];
 
 		layers = new ANN_Layer[layer_count];
-		Class[] layer_types = get_layer_types(layer_sizes);
 		for(int layer = 0; layer < layer_count; layer++) {
-			Constructor<ANN_Layer> constructor;
-			try {
-				constructor = layer_types[layer].getConstructor(int.class, int.class);
-			} catch(NoSuchMethodException nsme) {
-				throw new RuntimeException(nsme.getLocalizedMessage());
-			}
-
-			try {
-				layers[layer] = constructor.newInstance(sizes[layer], sizes[layer + 1]);
-			} catch(InstantiationException ie) {
-				throw new RuntimeException(ie.getLocalizedMessage());
-			} catch(IllegalAccessException iae) {
-				throw new RuntimeException(iae.getLocalizedMessage());
-			} catch(IllegalArgumentException iae) {
-				throw new RuntimeException(iae.getLocalizedMessage());
-			} catch(InvocationTargetException ite) {
-				throw new RuntimeException(ite.getLocalizedMessage());
-			}
+			layers[layer] = new ANN_Layer(sizes[layer], sizes[layer + 1]);
 		}
 	}
 
-	///////////////////////////////// ABSTRACT /////////////////////////////////
+	////////////////////////////////// METHODS /////////////////////////////////
 
 	/**
-	 * Defines the type of each layer given the number of neurons in each
+	 * Sets the activation function of the given layer
 	 */
-	public abstract Class[] get_layer_types(int[] layer_sizes);
+	public void set_activation_function(int layer, Object function) {
+		layers[layer].set_activation_function(function);
+	}
 
-	////////////////////////////////// METHODS /////////////////////////////////
+	/**
+	 * Sets the activation function for all layers
+	 */
+	public void set_activation_function(Object function) {
+		for(ANN_Layer layer : layers) {
+			layer.set_activation_function(function);
+		}
+	}
 
 	/**
 	 * Sets the learning rate of all layers in the network

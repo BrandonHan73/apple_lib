@@ -15,18 +15,36 @@ public class SoftmaxFunction implements DifferentiableVectorFunction {
 
 	@Override
 	public double[] pass(double... input) {
-		double sum = 0;
+		double max = 0;
+		for(double in : input) {
+			max = Math.max(max, in);
+		}
+
+		double[] exp = new double[input.length];
 		for(int i = 0; i < input.length; i++) {
-			sum += Math.exp(input[i]);
+			exp[i] = Math.exp(input[i] - max);
+		}
+
+		double sum = 0;
+		for(int i = 0; i < exp.length; i++) {
+			sum += exp[i];
 		}
 
 		if(Double.isFinite(sum) == false) {
-			throw new RuntimeException("Total sum is not finite");
+			StringBuilder msg = new StringBuilder("Total sum is not finite for inputs");
+			for(double in : input) {
+				msg.append(' ').append(in);
+			}
+			throw new RuntimeException(msg.toString());
 		}
 
-		double[] out = new double[input.length];
-		for(int i = 0; i < input.length; i++) {
-			out[i] = Math.exp(input[i]) / sum;
+		double[] out = new double[exp.length];
+		for(int i = 0; i < exp.length; i++) {
+			out[i] = exp[i] / sum;
+
+			if(!Double.isFinite(out[i])) {
+				throw new RuntimeException(String.format("Softmax output %f / %f is not finite", exp[i], sum));
+			}
 		}
 		return out;
 	}

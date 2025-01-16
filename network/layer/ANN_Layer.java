@@ -4,13 +4,12 @@ import apple_lib.function.activation.IdentityFunction;
 import apple_lib.function.DifferentiableScalarFunction;
 import apple_lib.function.DifferentiableVectorFunction;
 
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.Random;
 
 /**
  * Generic network layer
- *
- * Usage
- *  - Implement the activation function and its derivative
  */
 public class ANN_Layer {
 
@@ -37,11 +36,12 @@ public class ANN_Layer {
 	protected Object activation;
 
 	/* Last activation values, used for backpropogation */
-	protected double[] last_x, last_z, last_y;
+	protected Deque<double[]> x_history, z_history, y_history;
+	protected int history_length;
 
 	/* Stored derivative values */
 	protected double[][] loaded_dCdw;
-	protected double[] loaded_dCdb, loaded_dCdx;
+	protected double[] loaded_dCdb;
 
 	/* Learning rate and training time */
 	private double alpha;
@@ -65,12 +65,12 @@ public class ANN_Layer {
 			}
 			biases[out] = rng.nextGaussian();
 		}
-
-		last_x = null;
-		last_y = null;
-		last_z = null;
-
 		activation = IdentityFunction.implementation;
+
+		x_history = new LinkedList<>();
+		z_history = new LinkedList<>();
+		y_history = new LinkedList<>();
+		history_length = 0;
 
 		set_learning_rate(default_learning_rate);
 	}
@@ -190,16 +190,15 @@ public class ANN_Layer {
 			throw new RuntimeException(String.format("Expected %d inputs, %d provided", input_count, in.length));
 		}
 
-		last_x = new double[input_count];
+		double[] x = new double[input_count];
 		for(int i = 0; i < input_count; i++) {
 			if(Double.isFinite(in[i]) == false) {
 				throw new RuntimeException(String.format("Input %d is %s and not finite", i, Double.toString(in[i])));
 			}
-			last_x[i] = in[i];
+			x[i] = in[i];
 		}
 
 		double[] z = new double[output_count];
-		last_z = new double[output_count];
 		for(int o = 0; o < output_count; o++) {
 			z[o] = biases[o];
 			for(int i = 0; i < input_count; i++) {
@@ -208,60 +207,92 @@ public class ANN_Layer {
 			if(Double.isFinite(z[o]) == false) {
 				throw new RuntimeException(String.format("Intermediate %d in layer %s is %s and not finite", o, getClass().getName(), Double.toString(z[o])));
 			}
-			last_z[o] = z[o];
 		}
 
 		double[] y = activation_pass(z);
-		last_y = new double[output_count];
+		double[] out = new double[output_count];
 		for(int o = 0; o < output_count; o++) {
 			if(Double.isFinite(y[o]) == false) {
 				throw new RuntimeException(String.format("Output %d of activation function %s is %s and not finite", o, activation.getClass().getName(), Double.toString(y[o])));
 			}
-			last_y[o] = y[o];
+			out[o] = y[o];
 		}
 
-		return y;
+		x_history.addFirst(x);
+		z_history.addFirst(z);
+		y_history.addFirst(y);
+		history_length++;
+
+		return out;
+	}
+
+	/**
+	 * Clears the activation history
+	 */
+	public void clear_activation_history() {
+		loaded_dCdw = new double[input_count][output_count];
+		loaded_dCdb = new double[output_count];
+		for(int output = 0; output < output_count; output++) {
+			for(int input = 0; input < input_count; input++) {
+				loaded_dCdw[input][output] = 0;
+			}
+			loaded_dCdb[output] = 0;
+		}
+		
+		x_history.clear();
+		z_history.clear();
+		y_history.clear();
+		history_length = 0;
 	}
 
 	/**
 	 * Given dCdy, calculated derivative of C with respect to all weights, all
 	 * biases, and all inputs using the last-used activation. 
 	 */
-	protected void load_derivatives(double... dCdy) {
-		if(last_x == null || last_z == null || last_y == null) {
+	public double[] load_derivative(double... dCdy) {
+		if(history_length == 0) {
 			throw new RuntimeException("Must feed forward before backpropogating");
 		}
 		if(dCdy.length != output_count) {
 			throw new RuntimeException(String.format("Expected %d inputs, %d provided", output_count, dCdy.length));
 		}
 
+		double[] last_x = x_history.pollFirst();
+		double[] last_y = y_history.pollFirst();
+		double[] last_z = z_history.pollFirst();
+		history_length--;
+
 		double[] dCdz = activation_derivative(last_z, last_y, dCdy);
-		loaded_dCdb = new double[output_count];
 		for(int z = 0; z < output_count; z++) {
 			if(!Double.isFinite(dCdz[z])) {
 				throw new RuntimeException("dCdz is not finite");
 			}
-			loaded_dCdb = dCdz;
+			loaded_dCdb[z] += dCdz[z];
 		}
 
-		loaded_dCdx = new double[input_count];
+		double[] dCdx = new double[input_count];
 		for(int i = 0; i < input_count; i++) {
-			loaded_dCdx[i] = 0;
+			dCdx[i] = 0;
 			for(int o = 0; o < output_count; o++) {
-				loaded_dCdx[i] += dCdz[o] * weights[i][o];
+				dCdx[i] += dCdz[o] * weights[i][o];
 			}
 
-			if(!Double.isFinite(loaded_dCdx[i])) {
+			if(!Double.isFinite(dCdx[i])) {
 				throw new RuntimeException("dCdx is not finite");
 			}
 		}
 
-		loaded_dCdw = new double[input_count][output_count];
 		for(int o = 0; o < output_count; o++) {
 			for(int i = 0; i < input_count; i++) {
-				loaded_dCdw[i][o] = dCdz[o] * last_x[i];
+				loaded_dCdw[i][o] += dCdz[o] * last_x[i];
 			}
 		}
+
+		if(history_length == 0) {
+			apply_derivatives();
+		}
+
+		return dCdx;
 	}
 
 	/**
@@ -272,10 +303,9 @@ public class ANN_Layer {
 	 * User must feed forward before backpropogating. Once backpropogation
 	 * completes, user must feed forward again before next backpropogation. 
 	 */
-	public double[] backpropogate(double... dCdy) {
-		load_derivatives(dCdy);
-
+	public void apply_derivatives() {
 		double learning_rate = get_learning_rate();
+
 		for(int o = 0; o < output_count; o++) {
 			for(int i = 0; i < input_count; i++) {
 				weights[i][o] -= learning_rate * loaded_dCdw[i][o];
@@ -289,17 +319,8 @@ public class ANN_Layer {
 			}
 		}
 
-		last_x = null;
-		last_z = null;
-		last_y = null;
+		clear_activation_history();
 		training_time++;
-
-		double[] out = loaded_dCdx;
-		loaded_dCdw = null;
-		loaded_dCdb = null;
-		loaded_dCdx = null;
-
-		return out;
 	}
 
 	/**

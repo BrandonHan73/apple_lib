@@ -73,6 +73,7 @@ public class ANN_Layer {
 		history_length = 0;
 
 		set_learning_rate(default_learning_rate);
+		clear_activation_history();
 	}
 
 	////////////////////////////////// METHODS /////////////////////////////////

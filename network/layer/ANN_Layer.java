@@ -1,5 +1,9 @@
 package apple_lib.network.layer;
 
+import apple_lib.function.activation.IdentityFunction;
+import apple_lib.function.DifferentiableScalarFunction;
+import apple_lib.function.DifferentiableVectorFunction;
+
 import java.util.Random;
 
 /**
@@ -8,7 +12,7 @@ import java.util.Random;
  * Usage
  *  - Implement the activation function and its derivative
  */
-public abstract class ANN_Layer {
+public class ANN_Layer {
 
 	/////////////////////////////// STATIC FIELDS //////////////////////////////
 
@@ -28,6 +32,9 @@ public abstract class ANN_Layer {
 
 	/* Biases */
 	private double[] biases;
+
+	/* Activation Function */
+	protected Object activation;
 
 	/* Last activation values, used for backpropogation */
 	protected double[] last_x, last_z, last_y;
@@ -63,24 +70,116 @@ public abstract class ANN_Layer {
 		last_y = null;
 		last_z = null;
 
+		activation = IdentityFunction.implementation;
+
 		set_learning_rate(default_learning_rate);
 	}
-	
-	///////////////////////////////// ABSTRACT /////////////////////////////////
-
-	/**
-	 * Activation function used by this layer
-	 */
-	protected abstract double[] activation_function(double[] z);
-
-	/**
-	 * Calculates the derivative of the activation function with respect to all
-	 * activation function inputs, i.e. dy_i / dz_j. The result should be in
-	 * the format dy_i / dz_j = out[i][j]
-	 */
-	protected abstract double[][] activation_derivative(double[] z, double[] y);
 
 	////////////////////////////////// METHODS /////////////////////////////////
+
+	/**
+	 * Sets the activation function for this layer. If no function is set, the
+	 * identity function will be applied. 
+	 */
+	public void set_activation_function(Object function) {
+		boolean valid = false;
+
+		valid |= function instanceof DifferentiableScalarFunction;
+		valid |= function instanceof DifferentiableVectorFunction;
+
+		if(valid) {
+			activation = function;
+		} else {
+			throw new RuntimeException("Provide a valid activation function");
+		}
+	}
+
+	/**
+	 * Passes the provided input values through the activation function. Ensures
+	 * the sizes of all related inputs and outputs match the dimensions of the
+	 * layer. Ensures that the array passed as input and the array returned cannot
+	 * be modified.
+	 */
+	protected double[] activation_pass(double[] input) {
+		if(input.length != output_count) {
+			throw new RuntimeException(String.format("Expected %d inputs, %d provided", output_count, input.length));
+		}
+		double[] out = null;
+
+		double[] in = new double[output_count];
+		for(int i = 0; i < output_count; i++) {
+			in[i] = input[i];
+		}
+
+		if(activation instanceof DifferentiableScalarFunction) {
+			DifferentiableScalarFunction func = (DifferentiableScalarFunction) activation;
+			out = new double[output_count];
+			for(int i = 0; i < output_count; i++) {
+				out[i] = func.pass(input[i]);
+			}
+		}
+
+		if(activation instanceof DifferentiableVectorFunction) {
+			DifferentiableVectorFunction func = (DifferentiableVectorFunction) activation;
+			out = func.pass(in);
+			if(out.length != output_count) {
+				throw new RuntimeException(String.format("Expected %d outputs, %d provided", output_count, out.length));
+			}
+		}
+
+		double[] output = new double[output_count];
+		for(int i = 0; i < output_count; i++) {
+			output[i] = out[i];
+		}
+		return output;
+	}
+
+	/**
+	 * Determines dCdz using dCdy and the given intermediate and output values.
+	 * Ensures the sizes of all related inputs and outputs match the dimensions
+	 * of the layer. Ensures that the array passed as input and the array
+	 * returned cannot be modified.
+	 */
+	protected double[] activation_derivative(double[] z, double[] y, double[] dCdy) {
+		if(z.length != output_count) {
+			throw new RuntimeException(String.format("Expected %d inputs, %d provided", output_count, z.length));
+		}
+		if(y.length != output_count) {
+			throw new RuntimeException(String.format("Expected %d inputs, %d provided", output_count, y.length));
+		}
+		if(dCdy.length != output_count) {
+			throw new RuntimeException(String.format("Expected %d inputs, %d provided", output_count, dCdy.length));
+		}
+
+		double[] out = new double[output_count];
+		double[] func_in = new double[output_count];
+		double[] func_out = new double[output_count];
+		for(int i = 0; i < output_count; i++) {
+			func_in[i] = z[i];
+			func_out[i] = y[i];
+			out[i] = 0;
+		}
+
+		if(activation instanceof DifferentiableScalarFunction) {
+			DifferentiableScalarFunction func = (DifferentiableScalarFunction) activation;
+			out = new double[output_count];
+			for(int i = 0; i < output_count; i++) {
+				out[i] = dCdy[i] * func.differentiate(func_in[i], func_out[i]);
+			}
+		}
+
+		if(activation instanceof DifferentiableVectorFunction) {
+			DifferentiableVectorFunction func = (DifferentiableVectorFunction) activation;
+			double[][] dydz = func.differentiate(func_in, func_out);
+			for(int i = 0; i < output_count; i++) {
+				for(int j = 0; j < output_count; j++) {
+					out[j] += dCdy[i] * dydz[i][j];
+				}
+			}
+		}
+
+		return out;
+	}
 
 	/**
 	 * Passes the given inputs through the network. Updates private fields to
@@ -112,10 +211,7 @@ public abstract class ANN_Layer {
 			last_z[o] = z[o];
 		}
 
-		double[] y = activation_function(z);
-		if(y.length != output_count) {
-			throw new RuntimeException(String.format("Expected activation function to have %d outputs, %d provided", output_count, y.length));
-		}
+		double[] y = activation_pass(z);
 		last_y = new double[output_count];
 		for(int o = 0; o < output_count; o++) {
 			if(Double.isFinite(y[o]) == false) {
@@ -139,19 +235,9 @@ public abstract class ANN_Layer {
 			throw new RuntimeException(String.format("Expected %d inputs, %d provided", output_count, dCdy.length));
 		}
 
-		double[][] dydz = activation_derivative(last_z, last_y);
-		double[] dCdz = new double[output_count];
+		double[] dCdz = activation_derivative(last_z, last_y, dCdy);
 		loaded_dCdb = new double[output_count];
 		for(int z = 0; z < output_count; z++) {
-			dCdz[z] = 0;
-			for(int y = 0; y < output_count; y++) {
-				dCdz[z] += dCdy[y] * dydz[y][z];
-
-				if(!Double.isFinite(dydz[y][z])) {
-					throw new RuntimeException(String.format("%s derivative function gave non-finite value %s", getClass().getName(), Double.toString(dydz[y][z])));
-				}
-			}
-
 			if(!Double.isFinite(dCdz[z])) {
 				throw new RuntimeException("dCdz is not finite");
 			}

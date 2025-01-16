@@ -30,7 +30,11 @@ public abstract class ANN_Layer {
 	private double[] biases;
 
 	/* Last activation values, used for backpropogation */
-	private double[] last_x, last_z, last_y;
+	protected double[] last_x, last_z, last_y;
+
+	/* Stored derivative values */
+	protected double[][] loaded_dCdw;
+	protected double[] loaded_dCdb, loaded_dCdx;
 
 	/* Learning rate and training time */
 	private double alpha;
@@ -82,7 +86,7 @@ public abstract class ANN_Layer {
 	 * Passes the given inputs through the network. Updates private fields to
 	 * prepare for backpropogation. 
 	 */
-	public double[] pass(double[] in) {
+	public double[] pass(double... in) {
 		if(in.length != input_count) {
 			throw new RuntimeException(String.format("Expected %d inputs, %d provided", input_count, in.length));
 		}
@@ -124,14 +128,10 @@ public abstract class ANN_Layer {
 	}
 
 	/**
-	 * Updates weights and biases using last activation for inputs and using
-	 * the provided derivative dC/dy. Learning rate decreases over time. Returns
-	 * dC/dx for further backpropogation. 
-	 *
-	 * User must feed forward before backpropogating. Once backpropogation
-	 * completes, user must feed forward again before next backpropogation. 
+	 * Given dCdy, calculated derivative of C with respect to all weights, all
+	 * biases, and all inputs using the last-used activation. 
 	 */
-	public double[] backpropogate(double[] dCdy) {
+	protected void load_derivatives(double... dCdy) {
 		if(last_x == null || last_z == null || last_y == null) {
 			throw new RuntimeException("Must feed forward before backpropogating");
 		}
@@ -141,6 +141,7 @@ public abstract class ANN_Layer {
 
 		double[][] dydz = activation_derivative(last_z, last_y);
 		double[] dCdz = new double[output_count];
+		loaded_dCdb = new double[output_count];
 		for(int z = 0; z < output_count; z++) {
 			dCdz[z] = 0;
 			for(int y = 0; y < output_count; y++) {
@@ -154,29 +155,49 @@ public abstract class ANN_Layer {
 			if(!Double.isFinite(dCdz[z])) {
 				throw new RuntimeException("dCdz is not finite");
 			}
+			loaded_dCdb = dCdz;
 		}
 
-		double[] dCdx = new double[input_count];
+		loaded_dCdx = new double[input_count];
 		for(int i = 0; i < input_count; i++) {
-			dCdx[i] = 0;
+			loaded_dCdx[i] = 0;
 			for(int o = 0; o < output_count; o++) {
-				dCdx[i] += dCdz[o] * weights[i][o];
+				loaded_dCdx[i] += dCdz[o] * weights[i][o];
 			}
 
-			if(!Double.isFinite(dCdx[i])) {
+			if(!Double.isFinite(loaded_dCdx[i])) {
 				throw new RuntimeException("dCdx is not finite");
 			}
 		}
 
+		loaded_dCdw = new double[input_count][output_count];
+		for(int o = 0; o < output_count; o++) {
+			for(int i = 0; i < input_count; i++) {
+				loaded_dCdw[i][o] = dCdz[o] * last_x[i];
+			}
+		}
+	}
+
+	/**
+	 * Updates weights and biases using last activation for inputs and using
+	 * the provided derivative dC/dy. Learning rate decreases over time. Returns
+	 * dC/dx for further backpropogation. 
+	 *
+	 * User must feed forward before backpropogating. Once backpropogation
+	 * completes, user must feed forward again before next backpropogation. 
+	 */
+	public double[] backpropogate(double... dCdy) {
+		load_derivatives(dCdy);
+
 		double learning_rate = get_learning_rate();
 		for(int o = 0; o < output_count; o++) {
 			for(int i = 0; i < input_count; i++) {
-				weights[i][o] -= learning_rate * dCdz[o] * last_x[i];
+				weights[i][o] -= learning_rate * loaded_dCdw[i][o];
 				if(!Double.isFinite(weights[i][o])) {
 					throw new RuntimeException(String.format("%s diverged", getClass().getName()));
 				}
 			}
-			biases[o] -= learning_rate * dCdz[o];
+			biases[o] -= learning_rate * loaded_dCdb[o];
 			if(!Double.isFinite(biases[o])) {
 				throw new RuntimeException(String.format("%s diverged", getClass().getName()));
 			}
@@ -187,7 +208,12 @@ public abstract class ANN_Layer {
 		last_y = null;
 		training_time++;
 
-		return dCdx;
+		double[] out = loaded_dCdx;
+		loaded_dCdw = null;
+		loaded_dCdb = null;
+		loaded_dCdx = null;
+
+		return out;
 	}
 
 	/**

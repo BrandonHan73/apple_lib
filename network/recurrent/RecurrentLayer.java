@@ -4,7 +4,7 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import apple_lib.network.layer;
+import apple_lib.network.layer.ANN_Layer;
 
 /**
  * Recurrent layer. Retains information about past inputs. 

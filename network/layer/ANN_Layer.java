@@ -316,7 +316,7 @@ public class ANN_Layer {
 	 * count. 
 	 */
 	public double get_learning_rate() {
-		return alpha / (Math.log(training_time + 1) + 1);
+		return alpha / Math.sqrt(training_time + 1);
 	}
 
 	////////////////////////////////// STATIC //////////////////////////////////

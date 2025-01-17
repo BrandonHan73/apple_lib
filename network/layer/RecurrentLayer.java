@@ -32,9 +32,7 @@ public class RecurrentLayer extends ANN_Layer {
 		user_input_count = inputs;
 		recurrent_input_count = outputs;
 
-		x_history = new LinkedList<>();
-		z_history = new LinkedList<>();
-		y_history = new LinkedList<>();
+		clear_activation_history();
 	}
 
 	////////////////////////////////// METHODS /////////////////////////////////

@@ -3,6 +3,7 @@ package apple_lib.network.layer;
 import apple_lib.function.activation.IdentityFunction;
 import apple_lib.function.DifferentiableScalarFunction;
 import apple_lib.function.DifferentiableVectorFunction;
+import apple_lib.network.NetworkNode;
 
 import java.util.Deque;
 import java.util.LinkedList;
@@ -11,7 +12,7 @@ import java.util.Random;
 /**
  * Generic network layer
  */
-public class ANN_Layer {
+public class ANN_Layer implements NetworkNode {
 
 	/////////////////////////////// STATIC FIELDS //////////////////////////////
 
@@ -72,8 +73,16 @@ public class ANN_Layer {
 		y_history = new LinkedList<>();
 		history_length = 0;
 
+		loaded_dCdw = new double[input_count][output_count];
+		loaded_dCdb = new double[output_count];
+		for(int output = 0; output < output_count; output++) {
+			for(int input = 0; input < input_count; input++) {
+				loaded_dCdw[input][output] = 0;
+			}
+			loaded_dCdb[output] = 0;
+		}
+
 		set_learning_rate(default_learning_rate);
-		clear_activation_history();
 	}
 
 	////////////////////////////////// METHODS /////////////////////////////////
@@ -183,9 +192,25 @@ public class ANN_Layer {
 	}
 
 	/**
-	 * Passes the given inputs through the network. Updates private fields to
-	 * prepare for backpropogation. 
+	 * Sets the base learning rate and resets the training time
 	 */
+	public void set_learning_rate(double v) {
+		alpha = v;
+		training_time = 0; 
+	}
+
+	/**
+	 * Gets the learning rate that will be used in the next backpropogation
+	 * iteration. Depends on the base learning rate and the current iteration
+	 * count. 
+	 */
+	public double get_learning_rate() {
+		return alpha / Math.sqrt(training_time + 1);
+	}
+
+	//////////////////////////////// OVERRIDING ////////////////////////////////
+
+	@Override
 	public double[] pass(double... in) {
 		if(in.length != input_count) {
 			throw new RuntimeException(String.format("Expected %d inputs, %d provided", input_count, in.length));
@@ -227,29 +252,7 @@ public class ANN_Layer {
 		return out;
 	}
 
-	/**
-	 * Clears the activation history
-	 */
-	public void clear_activation_history() {
-		loaded_dCdw = new double[input_count][output_count];
-		loaded_dCdb = new double[output_count];
-		for(int output = 0; output < output_count; output++) {
-			for(int input = 0; input < input_count; input++) {
-				loaded_dCdw[input][output] = 0;
-			}
-			loaded_dCdb[output] = 0;
-		}
-		
-		x_history.clear();
-		z_history.clear();
-		y_history.clear();
-		history_length = 0;
-	}
-
-	/**
-	 * Given dCdy, calculated derivative of C with respect to all weights, all
-	 * biases, and all inputs using the last-used activation. 
-	 */
+	@Override
 	public double[] load_derivative(double... dCdy) {
 		if(history_length == 0) {
 			throw new RuntimeException("Must feed forward before backpropogating");
@@ -289,21 +292,18 @@ public class ANN_Layer {
 			}
 		}
 
-		if(history_length == 0) {
-			apply_derivatives();
-		}
-
 		return dCdx;
 	}
 
-	/**
-	 * Updates weights and biases using last activation for inputs and using
-	 * the provided derivative dC/dy. Learning rate decreases over time. Returns
-	 * dC/dx for further backpropogation. 
-	 *
-	 * User must feed forward before backpropogating. Once backpropogation
-	 * completes, user must feed forward again before next backpropogation. 
-	 */
+	@Override
+	public void clear_activation_history() {
+		x_history.clear();
+		z_history.clear();
+		y_history.clear();
+		history_length = 0;
+	}
+
+	@Override
 	public void apply_derivatives() {
 		double learning_rate = get_learning_rate();
 
@@ -313,32 +313,17 @@ public class ANN_Layer {
 				if(!Double.isFinite(weights[i][o])) {
 					throw new RuntimeException(String.format("%s diverged", getClass().getName()));
 				}
+				loaded_dCdw[i][o] = 0;
 			}
 			biases[o] -= learning_rate * loaded_dCdb[o];
 			if(!Double.isFinite(biases[o])) {
 				throw new RuntimeException(String.format("%s diverged", getClass().getName()));
 			}
+			loaded_dCdb[o] = 0;
 		}
 
 		clear_activation_history();
 		training_time++;
-	}
-
-	/**
-	 * Sets the base learning rate and resets the training time
-	 */
-	public void set_learning_rate(double v) {
-		alpha = v;
-		training_time = 0; 
-	}
-
-	/**
-	 * Gets the learning rate that will be used in the next backpropogation
-	 * iteration. Depends on the base learning rate and the current iteration
-	 * count. 
-	 */
-	public double get_learning_rate() {
-		return alpha / Math.sqrt(training_time + 1);
 	}
 
 	////////////////////////////////// STATIC //////////////////////////////////

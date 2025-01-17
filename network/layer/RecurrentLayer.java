@@ -1,10 +1,8 @@
-package apple_lib.network.recurrent;
+package apple_lib.network.layer;
 
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
-
-import apple_lib.network.layer.ANN_Layer;
 
 /**
  * Recurrent layer. Assumes subsequent inputs are correlated. As a word of
@@ -13,7 +11,7 @@ import apple_lib.network.layer.ANN_Layer;
  * "forgetting" the most recent input. As a result, one should not backpropogate
  * if the network is not being trained. 
  */
-public abstract class RecurrentLayer extends ANN_Layer {
+public class RecurrentLayer extends ANN_Layer {
 
 	////////////////////////////////// FIELDS //////////////////////////////////
 

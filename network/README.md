@@ -67,27 +67,24 @@ input passed through the network.
     double[] dCdx_1 = network.load_derivative(dCdy_1); // Matches with input_1
 
 **It is important to note that load_derivative does not update weights and
-biases unless it clears the history.** To apply the derivative, use the
-respective method. 
+biases.** To apply the derivative, use the respective method. 
 
     network.apply_derivatives();
 
 This will perform batch gradient decent using all derivatives currently loaded
-into the layer. Derivatives are combined through addition without scaling. The
-derivatives will be automatically applied when loading a derivative if the
-activation history is fully cleared by the load. Applying the derivatives will
-also clear the activation history. 
+into the layer. Derivatives are combined through addition without scaling.
+Applying the derivatives will also clear the activation history. 
 
 Reasonings:
  - The biggest reason I implemented ANN_Layer this way is because of recurrent
    neural networks. As explained later, recurrent networks work by passing
-   inputs to the same ANN_Layer multiple times. 
+   inputs to the same ANN_Layer multiple times. From a feed-forward perspective,
+   the ANN_Layer would seem to remember past inputs. 
  - For backpropogation through time, one simply calculates dCdy for the current
    input and loads the derivative. Then layer will then provide dCdx for the
    layer, which can then be loaded into the network again, this time with the
    previous input. 
- - As a side product, this allows for minibatch gradient decent, although less
-   efficient to use. 
+ - As a side product, this allows for minibatch gradient decent. 
 
 Extra notes:
  - A static field stores the default learning rate for all ANN_Layers. Use the
@@ -97,17 +94,17 @@ Extra notes:
    are updated. Changing the learning rate will reset the counter. Use method
    get_learning_rate to determine the decayed learning rate. 
 
-## BaseNetwork
+## ArrayList_ANN
 
 An ANN_Layer by itself models a fully connected artificial neural network with
-no hidden layers. Then to add hidden layers, the BaseNetwork class packages
+no hidden layers. Then to add hidden layers, the ArrayList_ANN class packages
 multiple ANN_Layers together. 
 
 ### Basic Usage
 
-To create a BaseNetwork, one must specify the number of nodes in each layer. 
+To create a ArrayList_ANN, one must specify the number of nodes in each layer. 
 
-    BaseNetwork network = new BaseNetwork(784, 64, 64, 10);
+    ArrayList_ANN network = new ArrayList_ANN(784, 64, 64, 10);
 
 This example network has 784 input neurons and 10 output neurons, along with two
 hidden layers with 64 neurons each. 
@@ -138,7 +135,7 @@ instances. These functions include the following.
  - apply_derivatives
 
 Extra notes:
- - The BaseLayer makes no effort to store histories because all records are
+ - The ArrayList_ANN makes no effort to store histories because all records are
    stored within the ANN_Layer instances. Although the output of one layer is
    the input to the next layer, each layer stores its own copy of the history. 
  - The load_derivative function returns the derivative of the cost function with

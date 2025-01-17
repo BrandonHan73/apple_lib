@@ -62,6 +62,19 @@ public class ANN_SeriesBuilder implements ANN_Builder {
 		nodes.addLast(target);
 	}
 
+	public void add_lstm_layer(int... sizes) {
+		int[] param = new int[sizes.length + 1];
+		param[0] = output_count;
+
+		for(int i = 0; i < sizes.length; i++) {
+			param[i + 1] = sizes[i];
+		}
+		output_count = param[sizes.length];
+
+		target = new ANN_SimpleSeriesBuilder(Type.LSTM, param);
+		nodes.addLast(target);
+	}
+
 	public void set_activation_function(Object function) {
 		if(target != null) {
 			target.set_activation_function(function);

@@ -1,8 +1,10 @@
 package apple_lib.network.builder;
 
 import apple_lib.network.layer.ANN_Layer;
+import apple_lib.network.layer.LSTM_Layer;
 import apple_lib.network.layer.RecurrentLayer;
 import apple_lib.network.model.ANN_Series;
+import apple_lib.network.LearningRateNode;
 import apple_lib.network.NetworkNode;
 
 /**
@@ -27,7 +29,7 @@ public class ANN_SimpleSeriesBuilder implements ANN_Builder {
 	//////////////////////////////// ENUMERATES ////////////////////////////////
 	
 	protected static enum Type {
-		STANDARD, RECURRENT
+		STANDARD, RECURRENT, LSTM
 	}
 
 	/////////////////////////////// CONSTRUCTORS ///////////////////////////////
@@ -58,7 +60,7 @@ public class ANN_SimpleSeriesBuilder implements ANN_Builder {
 	@Override
 	public NetworkNode generate() {
 		int layer_count = layer_sizes.length - 1;
-		ANN_Layer[] nodes = new ANN_Layer[layer_count];
+		NetworkNode[] nodes = new NetworkNode[layer_count];
 
 		for(int layer = 0; layer < layer_count; layer++) {
 			switch(layer_type) {
@@ -71,15 +73,24 @@ public class ANN_SimpleSeriesBuilder implements ANN_Builder {
 				nodes[layer] = new RecurrentLayer(layer_sizes[layer], layer_sizes[layer + 1]);
 				break;
 
+				case LSTM:
+				nodes[layer] = new LSTM_Layer(layer_sizes[layer], layer_sizes[layer + 1]);
+				break;
+
 				default:
 				throw new RuntimeException("Generation failed");
 			}
 
-			if(activation != null) {
-				nodes[layer].set_activation_function(activation);
+			if(learning_rate > 0 && nodes[layer] instanceof LearningRateNode) {
+				LearningRateNode lrn = (LearningRateNode) nodes[layer];
+				lrn.set_learning_rate(learning_rate);
 			}
-			if(learning_rate > 0) {
-				nodes[layer].set_learning_rate(learning_rate);
+
+			if(nodes[layer] instanceof ANN_Layer) {
+				ANN_Layer ann_layer = (ANN_Layer) nodes[layer];
+				if(activation != null) {
+					ann_layer.set_activation_function(activation);
+				}
 			}
 		}
 

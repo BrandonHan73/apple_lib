@@ -3,6 +3,7 @@ package apple_lib.network.layer;
 import apple_lib.function.activation.IdentityFunction;
 import apple_lib.function.DifferentiableScalarFunction;
 import apple_lib.function.DifferentiableVectorFunction;
+import apple_lib.network.LearningRateNode;
 import apple_lib.network.NetworkNode;
 
 import java.util.Deque;
@@ -12,7 +13,7 @@ import java.util.Random;
 /**
  * Generic network layer
  */
-public class ANN_Layer implements NetworkNode {
+public class ANN_Layer implements NetworkNode, LearningRateNode {
 
 	/////////////////////////////// STATIC FIELDS //////////////////////////////
 
@@ -192,19 +193,11 @@ public class ANN_Layer implements NetworkNode {
 	}
 
 	/**
-	 * Sets the base learning rate and resets the training time
-	 */
-	public void set_learning_rate(double v) {
-		alpha = v;
-		training_time = 0; 
-	}
-
-	/**
 	 * Gets the learning rate that will be used in the next backpropogation
 	 * iteration. Depends on the base learning rate and the current iteration
 	 * count. 
 	 */
-	public double get_learning_rate() {
+	protected double get_learning_rate() {
 		return alpha / Math.sqrt(training_time + 1);
 	}
 
@@ -324,6 +317,12 @@ public class ANN_Layer implements NetworkNode {
 
 		clear_activation_history();
 		training_time++;
+	}
+
+	@Override
+	public void set_learning_rate(double v) {
+		alpha = v;
+		training_time = 0; 
 	}
 
 	////////////////////////////////// STATIC //////////////////////////////////

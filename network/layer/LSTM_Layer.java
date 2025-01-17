@@ -5,6 +5,7 @@ import java.util.LinkedList;
 
 import apple_lib.function.activation.LogisticFunction;
 import apple_lib.function.activation.TanhFunction;
+import apple_lib.network.LearningRateNode;
 import apple_lib.network.NetworkNode;
 import apple_lib.network.layer.ANN_Layer;
 
@@ -12,7 +13,7 @@ import apple_lib.network.layer.ANN_Layer;
  * Long-Short Term Memory layer. Short term memory acts as output. Must use the
  * hyperbolic tangent activation function for long term memory. 
  */
-public class LSTM_Layer implements NetworkNode {
+public class LSTM_Layer implements NetworkNode, LearningRateNode {
 
 	////////////////////////////////// FIELDS //////////////////////////////////
 
@@ -131,6 +132,8 @@ public class LSTM_Layer implements NetworkNode {
 		double[] out = new double[output_count];
 		for(int output = 0; output < output_count; output++) {
 			out[output] = stm[output];
+			last_dCdL[output] = 0;
+			last_dCdS[output] = 0;
 		}
 
 		return out;
@@ -166,9 +169,10 @@ public class LSTM_Layer implements NetworkNode {
 			double ip = input_percent[node].y_history.peekFirst()[0];
 			double op = output_percent[node].y_history.peekFirst()[0];
 
-			double dCdL_out = last_dCdL[node] + dCdS_out * op * (1 - L_out * L_out);
+			double tanh_L_out = TanhFunction.implementation.pass(L_out);
+			double dCdL_out = last_dCdL[node] + dCdS_out * op * (1 - tanh_L_out * tanh_L_out);
 
-			double dCdop = dCdS_out * S_out / op;
+			double dCdop = dCdS_out * tanh_L_out;
 			double[] backpropogation = output_percent[node].load_derivative(dCdop);
 			for(int input = 0; input < input_count; input++) {
 				dCdx[input] += backpropogation[input];
@@ -183,14 +187,14 @@ public class LSTM_Layer implements NetworkNode {
 			dCdS_last[node] += backpropogation[input_count];
 
 			double dCdiv = dCdL_out * ip;
-			backpropogation = input_percent[node].load_derivative(dCdiv);
+			backpropogation = input_value[node].load_derivative(dCdiv);
 			for(int input = 0; input < input_count; input++) {
 				dCdx[input] += backpropogation[input];
 			}
 			dCdS_last[node] += backpropogation[input_count];
 
 			double dCdfp = dCdL_out * L_last;
-			backpropogation = input_percent[node].load_derivative(dCdfp);
+			backpropogation = forget_percent[node].load_derivative(dCdfp);
 			for(int input = 0; input < input_count; input++) {
 				dCdx[input] += backpropogation[input];
 			}
@@ -213,6 +217,16 @@ public class LSTM_Layer implements NetworkNode {
 			output_percent[node].apply_derivatives();
 		}
 		clear_activation_history();
+	}
+
+	@Override
+	public void set_learning_rate(double v) {
+		for(int node = 0; node < output_count; node++) {
+			forget_percent[node].set_learning_rate(v);
+			input_value[node].set_learning_rate(v);
+			input_percent[node].set_learning_rate(v);
+			output_percent[node].set_learning_rate(v);
+		}
 	}
 
 }

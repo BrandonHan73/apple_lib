@@ -76,7 +76,7 @@ into the layer. Derivatives are combined through addition without scaling.
 Applying the derivatives will also clear the activation history. 
 
 Reasonings:
- - The biggest reason I implemented ANN_Layer this way is because of recurrent
+ - The main reason I implemented ANN_Layer this way is because of recurrent
    neural networks. As explained later, recurrent networks work by passing
    inputs to the same ANN_Layer multiple times. From a feed-forward perspective,
    the ANN_Layer would seem to remember past inputs. 
@@ -93,52 +93,4 @@ Extra notes:
    inverse square root. Time is dictated by how many times weights and biases
    are updated. Changing the learning rate will reset the counter. Use method
    get_learning_rate to determine the decayed learning rate. 
-
-## ArrayList_ANN
-
-An ANN_Layer by itself models a fully connected artificial neural network with
-no hidden layers. Then to add hidden layers, the ArrayList_ANN class packages
-multiple ANN_Layers together. 
-
-### Basic Usage
-
-To create a ArrayList_ANN, one must specify the number of nodes in each layer. 
-
-    ArrayList_ANN network = new ArrayList_ANN(784, 64, 64, 10);
-
-This example network has 784 input neurons and 10 output neurons, along with two
-hidden layers with 64 neurons each. 
-
-Recall that ANN_Layers are initialized to use an identity activation function. 
-Activation functions can be specified either for the whole network, or specific
-layers. Layers are zero-indexed, with layer 0 connecting the input layer to the
-first hidden layer. 
-
-    // Switches layers 1 and 2 to the softplus activation function
-    network.set_activation_function(SoftplusFunction.implementation, 1, 2);
-
-    // Sets all layers to the softmax activation function
-    network.set_activation_function(SoftmaxFunction.implementation);
-
-The same syntax can be used to set the learning rates of each layer through the
-set_learning_rate function. 
-
-The pass and load_derivative functions chains through all ANN_Layer instances,
-exactly how one would expect from a neural network. 
-
-    network.pass(3, 1, 4, 1, 5, 9, 2, 6, ...);
-    network.load_derivative(2, 7, 1, 8, 2, 8, ...);
-
-Other functions exist to call the respective functions in all ANN_Layer
-instances. These functions include the following. 
- - clear_activation_history
- - apply_derivatives
-
-Extra notes:
- - The ArrayList_ANN makes no effort to store histories because all records are
-   stored within the ANN_Layer instances. Although the output of one layer is
-   the input to the next layer, each layer stores its own copy of the history. 
- - The load_derivative function returns the derivative of the cost function with
-   respect to the input to the full network. This may be useful for more complex
-   network models in future implementations. 
 

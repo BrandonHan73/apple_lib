@@ -49,6 +49,11 @@ Users cannot remove individual input records.
 
     network.clear_inputs();
 
+Users can determine the total number of inputs currently loaded into the
+network.
+
+    int input_count = network.data_length();
+
 ### Backpropogation
 
 To use backpropogation, users must specify the derivative of the cost function
@@ -61,4 +66,28 @@ If no index is given, then the network will assume the derivative applies to the
 most recent output. Output indices correspond to the respective input indices. 
 If multiple derivatives are loaded to the same output, the derivatives will be
 combined using addition. 
+
+Backpropogate to perform a chain rule calculation of the loaded derivatives. 
+
+    double[] dCdx = network.backpropogate(index);
+
+The calculation will use the loaded derivative values and the recorded
+activation values for the specifies index. The returned value will be the
+derivative of the cost function with respect to the specified network input. 
+**Weights and biases are not updated by this method.** If an index is not
+specified, calculations will be performed on the most recent input.
+
+To update weights and biases, use the corresponding method. 
+
+    network.update_parameters()
+
+Calling this method will update all parameters based off of the current records
+and loaded derivatives. After updates are complete, certain data will become
+outdated and will be cleared. 
+ - Output records. Changing the parameters would affect the calculated outputs. 
+ - Loaded derivatives. The changed output will affect the cost function, so the
+   derivative of the cost function with respect to the new parameters are
+   unlikely to remain the same. 
+These will have to be recalculated. Importantly, the input values will not be
+removed from the record. 
 

@@ -22,7 +22,7 @@ public class ANN_Core {
 	protected double[] biases;
 	protected Object activation;
 
-	/* Total input and output counts */
+	/* Hyperparameters */
 	public final int input_count, output_count;
 
 	/////////////////////////////// CONSTRUCTORS ///////////////////////////////

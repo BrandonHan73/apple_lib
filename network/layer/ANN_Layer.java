@@ -18,9 +18,6 @@ public class ANN_Layer implements NetworkNode, LearningRateNode {
 
 	/////////////////////////////// STATIC FIELDS //////////////////////////////
 
-	/* Random number generator */
-	private static final Random rng = new Random();
-
 	/* Default learning rate */
 	public static double default_learning_rate = 0.01;
 

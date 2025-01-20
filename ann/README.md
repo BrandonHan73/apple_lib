@@ -79,7 +79,7 @@ specified, calculations will be performed on the most recent input.
 
 To update weights and biases, use the corresponding method. 
 
-    network.update_parameters()
+    ANN_Base.gradient_descent(network);
 
 Calling this method will update all parameters based off of the current records
 and loaded derivatives. After updates are complete, certain data will become
@@ -90,4 +90,9 @@ outdated and will be cleared.
    unlikely to remain the same. 
 These will have to be recalculated. Importantly, the input values will not be
 removed from the record. 
+
+A static method is used to apply gradient descent because updates cannot be
+efficiently performed from an instance-based perspective. The non-static method
+update_parameters in the ArtificialNeuralNetwork interface performs gradient
+descent on a single frame without unloading data. 
 

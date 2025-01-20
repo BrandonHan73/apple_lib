@@ -63,13 +63,22 @@ public class ANN_Core {
 			z.length != output_count || 
 			y.length != output_count
 		) {
-			throw new RuntimeException("Parameter length invalid");
+			throw new IllegalArgumentException();
+		}
+
+		for(int input = 0; input < input_count; input++) {
+			if(!Double.isFinite(x[input])) {
+				throw new IllegalArgumentException("Provided non-finite input");
+			}
 		}
 
 		for(int output = 0; output < output_count; output++) {
 			z[output] = biases[output];
 			for(int input = 0; input < input_count; input++) {
 				z[output] += weights[input][output] * x[input];
+			}
+			if(!Double.isFinite(z[output])) {
+				throw new ArithmeticException("Produced non-finite result");
 			}
 		}
 
@@ -96,7 +105,7 @@ public class ANN_Core {
 			dCdb.length != output_count ||
 			dCdx.length != input_count
 		) {
-			throw new RuntimeException("Parameter length invalid");
+			throw new IllegalArgumentException();
 		}
 
 		double[] dCdz = SafePass.backpropogate(activation, z, y, dCdy);
@@ -140,7 +149,7 @@ public class ANN_Core {
 			for(int output = 0; output < output_count; output++) {
 				weights[input][output] -= alpha * dCdw[input][output];
 				if(!Double.isFinite(weights[input][output])) {
-					throw new RuntimeException("Bias became non-finite");
+					throw new RuntimeException("Weight became non-finite");
 				}
 			}
 		}

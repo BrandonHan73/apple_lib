@@ -9,7 +9,7 @@ import java.util.Set;
  * Frame used to contain ANN_Core. Capable of connecting with other cores to
  * create complex neural networks. 
  */
-public abstract class ANN_Frame {
+public abstract class ANN_Frame implements Cloneable {
 
 	////////////////////////////////// FIELDS //////////////////////////////////
 
@@ -56,6 +56,41 @@ public abstract class ANN_Frame {
 	protected abstract void load_backward(int index);
 
 	////////////////////////////////// METHODS /////////////////////////////////
+
+	/**
+	 * Adds the given value to a specific input for the forward direction
+	 */
+	protected void load_forward_input(int index, double... value) {
+		if(value.length != back_size) {
+			throw new IllegalArgumentException();
+		}
+
+		double[] target = forward_input.get(index);
+		for(int i = 0; i < back_size; i++) {
+			target[i] += value[i];
+		}
+		unload_forward(index);
+	}
+
+	/**
+	 * Adds the given value to a specific input for the forward direction
+	 */
+	protected void load_backward_input(int index, double... value) {
+		if(value.length != front_size) {
+			throw new IllegalArgumentException(
+				String.format(
+					"Backward input size %d does not match expected size %d",
+					value.length, front_size
+				)
+			);
+		}
+
+		double[] target = backward_input.get(index);
+		for(int i = 0; i < front_size; i++) {
+			target[i] += value[i];
+		}
+		unload_backward(index);
+	}
 
 	/**
 	 * Determines a specific outgoing value in the forward direction. If a value
@@ -117,6 +152,7 @@ public abstract class ANN_Frame {
 				out[i] += input[i];
 			}
 		}
+		return out;
 	}
 
 	/**
@@ -137,20 +173,35 @@ public abstract class ANN_Frame {
 				out[i] += input[i];
 			}
 		}
+		return out;
 	}
 
 	/**
 	 * Deletes a specific calculation from the forward direction
 	 */
 	protected void unload_forward(int index) {
-		forward_output.set(index, null);
+		double[] target = forward_output.get(index);
+
+		if(target != null) {
+			forward_output.set(index, null);
+			for(ANN_Frame connection : forward_connections) {
+				connection.unload_forward(index);
+			}
+		}
 	}
 
 	/**
 	 * Deletes a specific calculation from the backward direction
 	 */
 	protected void unload_backward(int index) {
-		backward_output.set(index, null);
+		double[] target = backward_output.get(index);
+
+		if(target != null) {
+			backward_output.set(index, null);
+			for(ANN_Frame connection : backward_connections) {
+				connection.unload_backward(index);
+			}
+		}
 	}
 
 	/**
@@ -177,6 +228,41 @@ public abstract class ANN_Frame {
 				backward_output.add(null);
 			}
 		}
+	}
+
+	/**
+	 * Clears all data in the frame tree
+	 */
+	protected void clear_data() {
+		if(content_count > 0) {
+			content_count = 0;
+
+			forward_connections.forEach(connection -> connection.clear_data());
+			backward_connections.forEach(connection -> connection.clear_data());
+
+			forward_input.clear();
+			forward_output.clear();
+			backward_input.clear();
+			backward_output.clear();
+		}
+	}
+
+	////////////////////////////// STATIC METHODS //////////////////////////////
+
+	/**
+	 * Connects two frames together. Ensures the content lengths match. Resolves
+	 * conflicts by expanding the content data. 
+	 */
+	public static void connect(ANN_Frame back, ANN_Frame front) {
+		if(back.front_size != front.back_size) {
+			throw new IllegalArgumentException();
+		}
+		 
+		back.forward_connections.add(front);
+		front.backward_connections.add(back);
+
+		back.expand(front.content_count);
+		front.expand(back.content_count);
 	}
 
 }

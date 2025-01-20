@@ -20,9 +20,11 @@ import apple_lib.ann.core.ANN_Frame;
  * ANN_Frame
  *  - load_forward(int)
  *  - load_backward(int)
+ *  - unload_forward(int)
+ *  - unload_backward(int)
  *  - expand(int)
  *  - clear_data()
- * Remember to call super.expand(int) and super.clear_data()
+ * Remember to call super method for last for functions
  */
 public abstract class ANN_Base extends ANN_Frame implements ArtificialNeuralNetwork {
 
@@ -60,15 +62,15 @@ public abstract class ANN_Base extends ANN_Frame implements ArtificialNeuralNetw
 			throw new IllegalArgumentException();
 		}
 
-		super.expand(inputs_loaded + 1);
-		super.load_forward_input(inputs_loaded, input);
+		expand(inputs_loaded + 1);
+		load_forward_input(inputs_loaded, input);
 
 		inputs_loaded++;
 	}
 
 	@Override
 	public double[] calculate(int input) {
-		return super.forward_outgoing(input);
+		return forward_outgoing(input);
 	}
 
 	@Override
@@ -78,13 +80,13 @@ public abstract class ANN_Base extends ANN_Frame implements ArtificialNeuralNetw
 
 	@Override
 	public void clear_inputs() {
-		super.clear_data();
+		clear_data();
 		inputs_loaded = 0;
 	}
 
 	@Override
 	public void load_derivative(int input, double... dCdy) {
-		super.load_backward_input(input, dCdy);
+		load_backward_input(input, dCdy);
 	}
 
 	@Override
@@ -94,7 +96,7 @@ public abstract class ANN_Base extends ANN_Frame implements ArtificialNeuralNetw
 
 	@Override
 	public double[] backpropogate(int output) {
-		return super.backward_outgoing(output);
+		return backward_outgoing(output);
 	}
 
 	@Override

@@ -58,12 +58,14 @@ public class ANN_Core {
 	 * the provided arrays. 
 	 */
 	public void feed_forward(double[] x, double[] z, double[] y) {
-		if(
-			x.length != input_count || 
-			z.length != output_count || 
-			y.length != output_count
-		) {
-			throw new IllegalArgumentException();
+		if(x.length != input_count) {
+			throw new IllegalArgumentException(String.format("Expected input length %d, but array of length %d received", input_count, x.length));
+		}
+		if(y.length != output_count) {
+			throw new IllegalArgumentException(String.format("Expected intermediate length %d, but array of length %d received", output_count, z.length));
+		}
+		if(z.length != output_count) {
+			throw new IllegalArgumentException(String.format("Expected output length %d, but array of length %d received", output_count, y.length));
 		}
 
 		for(int input = 0; input < input_count; input++) {
@@ -96,16 +98,26 @@ public class ANN_Core {
 		double[] x, double[] z, double[] y, double[] dCdy, 
 		double[][] dCdw, double[] dCdb, double[] dCdx
 	) {
-		if(
-			x.length != input_count || 
-			z.length != output_count || 
-			y.length != output_count ||
-			dCdy.length != output_count ||
-			dCdw.length != input_count ||
-			dCdb.length != output_count ||
-			dCdx.length != input_count
-		) {
-			throw new IllegalArgumentException();
+		if(x.length != input_count) {
+			throw new IllegalArgumentException(String.format("Expected input length %d, but array of length %d received", input_count, x.length));
+		}
+		if(y.length != output_count) {
+			throw new IllegalArgumentException(String.format("Expected intermediate length %d, but array of length %d received", output_count, z.length));
+		}
+		if(z.length != output_count) {
+			throw new IllegalArgumentException(String.format("Expected output length %d, but array of length %d received", output_count, y.length));
+		}
+		if(dCdy.length != output_count) {
+			throw new IllegalArgumentException(String.format("Expected dC/dy length %d, but array of length %d received", output_count, dCdy.length));
+		}
+		if(dCdw.length != input_count) {
+			throw new IllegalArgumentException(String.format("Expected dC/dw to have %d rows, but matrix with %d rows received", input_count, dCdw.length));
+		}
+		if(dCdb.length != output_count) {
+			throw new IllegalArgumentException(String.format("Expected dC/db length %d, but array of length %d received", output_count, dCdb.length));
+		}
+		if(dCdx.length != input_count) {
+			throw new IllegalArgumentException(String.format("Expected dC/dx length %d, but array of length %d received", input_count, dCdx.length));
 		}
 
 		double[] dCdz = SafePass.backpropogate(activation, z, y, dCdy);

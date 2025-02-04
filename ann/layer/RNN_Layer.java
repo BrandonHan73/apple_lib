@@ -6,6 +6,10 @@ import java.util.List;
 import apple_lib.ann.base.ANN_Base;
 import apple_lib.ann.core.ANN_Core;
 
+/**
+ * Recursive neural network layer. All outputs are passed as inputs for the next
+ * item. 
+ */
 public class RNN_Layer extends ANN_Base {
 
 	////////////////////////////////// FIELDS //////////////////////////////////

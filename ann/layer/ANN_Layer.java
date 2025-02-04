@@ -6,6 +6,9 @@ import java.util.List;
 import apple_lib.ann.base.ANN_Base;
 import apple_lib.ann.core.ANN_Core;
 
+/**
+ * Basic fully connected ANN layer
+ */
 public class ANN_Layer extends ANN_Base {
 
 	////////////////////////////////// FIELDS //////////////////////////////////

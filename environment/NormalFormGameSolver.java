@@ -2,14 +2,31 @@ package apple_lib.environment;
 
 import apple_lib.function.activation.SoftmaxFunction;
 
+/**
+ * Solver for normal form games. Contains various algorithms. 
+ */
 public class NormalFormGameSolver {
 
+	////////////////////////////////// FIELDS //////////////////////////////////
+
+	/* Simulator */
 	private NormalFormGame sim;
 
+	/////////////////////////////// CONSTRUCTORS ///////////////////////////////
+
+	/**
+	 * Basic constructor
+	 */
 	public NormalFormGameSolver(NormalFormGame game) {
 		sim = game;
 	}
 
+	////////////////////////////////// METHODS /////////////////////////////////
+
+	/**
+	 * Solves the normal form game using fictitious play. Uses the specified 
+	 * number of iterations. 
+	 */
 	public double[][] fictitious_play(int K) {
 		double[][] output = new double[sim.I][];
 		int[][] empirical = new int[sim.I][];
@@ -78,6 +95,10 @@ public class NormalFormGameSolver {
 		return output;
 	}
 
+	/**
+	 * Solves the normal form game using gradient ascent. Uses the specified 
+	 * number of iterations and the specified learning rate. 
+	 */
 	public double[][] gradient_ascent(int K, double alpha) {
 		double[][] output = new double[sim.I][];
 		double[][] parameters = new double[sim.I][];
@@ -129,6 +150,11 @@ public class NormalFormGameSolver {
 		return output;
 	}
 
+	/**
+	 * Solves the normal form game using fictitious play. Uses the specified 
+	 * number of iterations and applies distribution expectation instead of fixed
+	 * actions. 
+	 */
 	public double[][] distribution_expectation(int K) {
 		double[][] output = new double[sim.I][];
 		double[][] empirical = new double[sim.I][];

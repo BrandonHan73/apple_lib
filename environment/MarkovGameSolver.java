@@ -1,13 +1,29 @@
 package apple_lib.environment;
 
+/**
+ * Solves fully observable, stochastic, Markov games
+ */
 public class MarkovGameSolver {
 
+	////////////////////////////////// FIELDS //////////////////////////////////
+
+	/* Simulator */
 	private MarkovGame sim;
 
+	/////////////////////////////// CONSTRUCTORS ///////////////////////////////
+
+	/**
+	 * Basic constructor
+	 */
 	public MarkovGameSolver(MarkovGame game) {
 		sim = game;
 	}
 
+	////////////////////////////////// METHODS /////////////////////////////////
+
+	/**
+	 * Solves the Markov game using policy iteration
+	 */
 	public double[][][] policy_iteration(int K, int N) {
 		double[][][] policy = new double[sim.S][sim.I][];
 		for(int state = 0; state < sim.S; state++) {
@@ -21,15 +37,6 @@ public class MarkovGameSolver {
 
 		for(int iteration = 0; iteration < K; iteration++) {
 			double[][] value = value(policy);
-
-			for(int state = 0; state < sim.S; state++) {
-				for(int player = 0; player < sim.I; player++) {
-					System.out.print(String.format("%f ", value[state][player]));
-				}
-				System.out.println();
-			}
-			System.out.println();
-
 			double[][][] update = new double[sim.S][][];
 			for(int state = 0; state < sim.S; state++) {
 				int state_ = state;
@@ -51,6 +58,23 @@ public class MarkovGameSolver {
 		return policy;
 	}
 
+	/**
+	 * Determines the expected value of the full game, given the value of each state
+	 */
+	public double[] value(double[][] value) {
+		double[] out = new double[sim.I];
+		for(int state = 0; state < sim.S; state++) {
+			double prob = sim.mu(state);
+			for(int player = 0; player < sim.I; player++) {
+				out[player] += prob * value[state][player];
+			}
+		}
+		return out;
+	}
+
+	/**
+	 * Determines the value function conditioned on the provided player policies
+	 */
 	public double[][] value(double[][][] policy) {
 		double[][] transition = new double[sim.S][sim.S];
 		double[][] reward = new double[sim.S][sim.I];

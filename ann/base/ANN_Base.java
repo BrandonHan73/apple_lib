@@ -24,7 +24,7 @@ import apple_lib.ann.core.ANN_Frame;
  *  - unload_backward(int)
  *  - expand(int)
  *  - clear_data()
- * Remember to call super method for last for functions
+ * Remember to call super method for last four functions
  */
 public abstract class ANN_Base extends ANN_Frame implements ArtificialNeuralNetwork {
 

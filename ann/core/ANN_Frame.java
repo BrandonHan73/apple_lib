@@ -1,9 +1,7 @@
 package apple_lib.ann.core;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Frame used to contain ANN_Core. Capable of connecting with other cores to
@@ -18,7 +16,7 @@ public abstract class ANN_Frame implements Cloneable {
 	protected int content_count;
 
 	/* Connections */
-	protected Set<ANN_Frame> forward_connections, backward_connections;
+	protected List<ANN_Frame> forward_connections, backward_connections;
 
 	/* Forward data */
 	protected List<double[]> forward_input, forward_output;
@@ -33,8 +31,8 @@ public abstract class ANN_Frame implements Cloneable {
 		back_size = inputs;
 		content_count = 0;
 
-		forward_connections = new HashSet<>();
-		backward_connections = new HashSet<>();
+		forward_connections = new ArrayList<>();
+		backward_connections = new ArrayList<>();
 
 		forward_input = new ArrayList<>();
 		forward_output = new ArrayList<>();
@@ -247,6 +245,28 @@ public abstract class ANN_Frame implements Cloneable {
 		}
 	}
 
+	/**
+	 * Connects a frame to the front of this frame
+	 */
+	protected void connect_to_front(ANN_Frame other) {
+		if(other.back_size != front_size) {
+			throw new IllegalArgumentException();
+		}
+		forward_connections.add(other);
+		expand(other.content_count);
+	}
+
+	/**
+	 * Connects a frame to the back of this frame
+	 */
+	protected void connect_to_back(ANN_Frame other) {
+		if(other.front_size != back_size) {
+			throw new IllegalArgumentException();
+		}
+		backward_connections.add(other);
+		expand(other.content_count);
+	}
+
 	////////////////////////////// STATIC METHODS //////////////////////////////
 
 	/**
@@ -254,15 +274,8 @@ public abstract class ANN_Frame implements Cloneable {
 	 * conflicts by expanding the content data. 
 	 */
 	public static void connect(ANN_Frame back, ANN_Frame front) {
-		if(back.front_size != front.back_size) {
-			throw new IllegalArgumentException();
-		}
-		 
-		back.forward_connections.add(front);
-		front.backward_connections.add(back);
-
-		back.expand(front.content_count);
-		front.expand(back.content_count);
+		back.connect_to_front(front);
+		front.connect_to_back(back);
 	}
 
 }

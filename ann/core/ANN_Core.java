@@ -3,6 +3,7 @@ package apple_lib.ann.core;
 import java.util.Random;
 
 import apple_lib.function.SafePass;
+import apple_lib.function.activation.*;
 
 /**
  * Basic core for a standard network. Performs a matrix multiplication, followed
@@ -38,20 +39,43 @@ public class ANN_Core {
 		weights = new double[inputs][outputs];
 		biases = new double[outputs];
 
+		double std = optimal_std(inputs + 1, activation_function);
 		for(int out = 0; out < outputs; out++) {
 			for(int in = 0; in < inputs; in++) {
 				do {
-					weights[in][out] = rng.nextGaussian();
+					weights[in][out] = rng.nextGaussian(0, std);
 				} while(weights[in][out] == 0);
 			}
 			do {
-				biases[out] = rng.nextGaussian();
+				biases[out] = rng.nextGaussian(0, std);
 			} while(biases[out] == 0);
 		}
 		activation = activation_function;
 	}
 
 	////////////////////////////////// METHODS /////////////////////////////////
+
+	/**
+	 * Determines the standard deviation based on the activation function and
+	 * number of inputs.
+	 */
+	protected double optimal_std(int inputs, Object activation_function) {
+		if(
+			activation_function instanceof TanhFunction ||
+			activation_function instanceof LogisticFunction
+		) {
+			return 1 / Math.sqrt(inputs);
+		}
+
+		if(
+			activation_function instanceof SoftplusFunction ||
+			activation_function instanceof SwishFunction
+		) {
+			return 2 / Math.sqrt(inputs);
+		}
+
+		return 1;
+	}
 
 	/**
 	 * Feeds an input forward. Stores intermediate values and output values in

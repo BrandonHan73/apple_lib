@@ -157,7 +157,7 @@ public class SimplexSolver implements LP_Solver {
 
 		// Load objective function to dictionary
 		for(int var = 0; var < variable_count; var++) {
-			dictionary[objective_index][var] = minimize ? -objective[var] : objective[var];
+			dictionary[objective_index][var] = objective[var];
 		}
 		// Initialize basis variable coefficients and negated output to zero
 		for(int var = variable_count; var < dictionary_cols; var++) {

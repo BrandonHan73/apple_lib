@@ -32,7 +32,7 @@ public class TwoPhaseSimplex extends LexicographicSimplex {
 			dictionary[con][delta_index] = 0;
 		}
 		for(int var = 0; var < variable_count; var++) {
-			dictionary[objective_index][var] = minimize ? -objective[var] : objective[var];
+			dictionary[objective_index][var] = objective[var];
 		}
 		for(int var = variable_count; var < dictionary_cols; var++) {
 			dictionary[objective_index][var] = 0;

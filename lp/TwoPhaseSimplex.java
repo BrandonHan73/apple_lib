@@ -116,7 +116,6 @@ public class TwoPhaseSimplex extends LexicographicSimplex {
 		update();
 
 		output = dictionary[objective_index][constant_index];
-		params = new double[0][];
 
 		for(int var = 0; var < constant_index; var++) {
 			if(dictionary[objective_index][var] > 0) {
@@ -124,8 +123,18 @@ public class TwoPhaseSimplex extends LexicographicSimplex {
 				break;
 			}
 		}
+		if(infeasible || unbounded) {
+			return false;
+		} else {
+			params = new double[variable_count];
+			for(int var = 0; var < constraint_count; var++) {
+				if(basis[var] < variable_count) {
+					params[basis[var]] = dictionary[var][constant_index];
+				}
+			}
 
-		return !infeasible && !unbounded;
+			return true;
+		}
 	}
 
 }

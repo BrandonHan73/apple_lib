@@ -1,5 +1,7 @@
 package apple_lib.environment;
 
+import apple_lib.lp.GaussianElimination;
+
 /**
  * Solves fully observable, stochastic, Markov games
  */
@@ -76,6 +78,7 @@ public class MarkovGameSolver {
 	 * Determines the value function conditioned on the provided player policies
 	 */
 	public double[][] value(double[][][] policy) {
+		// Determine transition and reward matrices
 		double[][] transition = new double[sim.S][sim.S];
 		double[][] reward = new double[sim.S][sim.I];
 		for(int state = 0; state < sim.S; state++) {
@@ -101,12 +104,14 @@ public class MarkovGameSolver {
 			}
 		}
 
+		// Create matrix to take the inverse of
 		double[][] I_gT = new double[sim.S][sim.S];
 		for(int state = 0; state < sim.S; state++) {
 			for(int next = 0; next < sim.S; next++) {
 				I_gT[state][next] = (state == next ? 1 : 0) - sim.gamma * transition[state][next];
 			}
 		}
+		// Set up matrix used for inverse calculation by appending identity matrix
 		double[][] inverse_calc = new double[sim.S][2 * sim.S];
 		for(int state = 0; state < sim.S; state++) {
 			for(int next = 0; next < sim.S; next++) {
@@ -114,27 +119,13 @@ public class MarkovGameSolver {
 				inverse_calc[state][next + sim.S] = state == next ? 1 : 0;
 			}
 		}
-		for(int row = 0; row < sim.S; row++) {
-			double base = inverse_calc[row][row];
-			if(base == 0) throw new RuntimeException();
-			for(int col = 0; col < 2 * sim.S; col++) {
-				inverse_calc[row][col] /= base;
-			}
-			for(int target = row + 1; target < sim.S; target++) {
-				base = inverse_calc[target][row];
-				for(int col = 0; col < 2 * sim.S; col++) {
-					inverse_calc[target][col] -= inverse_calc[row][col] * base;
-				}
-			}
-		}
-		for(int row = sim.S - 1; row >= 0; row--) {
-			for(int target = 0; target < row; target++) {
-				double base = inverse_calc[target][row];
-				for(int col = row; col < 2 * sim.S; col++) {
-					inverse_calc[target][col] -= inverse_calc[row][col] * base;
-				}
-			}
-		}
+
+		// Reduce to reduced row echilon form
+		GaussianElimination solver = new GaussianElimination(sim.S, 2 * sim.S);
+		solver.load(inverse_calc);
+		inverse_calc = solver.rref();
+
+		// Extract inverse matrix
 		double[][] inverse = new double[sim.S][sim.S];
 		for(int row = 0; row < sim.S; row++) {
 			for(int col = 0; col < sim.S; col++) {
@@ -142,6 +133,7 @@ public class MarkovGameSolver {
 			}
 		}
 
+		// Perform matrix multiplication
 		double[][] value = new double[sim.S][sim.I];
 		for(int state = 0; state < sim.S; state++) {
 			for(int next = 0; next < sim.S; next++) {

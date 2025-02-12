@@ -1,5 +1,7 @@
 package apple_lib.environment;
 
+import apple_lib.lp.GaussianElimination;
+
 /**
  * Solver for Markov decision processes
  */
@@ -142,29 +144,12 @@ public class MarkovDecisionProcessSolver {
 				inverse_calc[state][next + sim.S] = state == next ? 1 : 0;
 			}
 		}
-		// First pass for row echilon form
-		for(int row = 0; row < sim.S; row++) {
-			double base = inverse_calc[row][row];
-			if(base == 0) throw new RuntimeException();
-			for(int col = 0; col < 2 * sim.S; col++) {
-				inverse_calc[row][col] /= base;
-			}
-			for(int target = row + 1; target < sim.S; target++) {
-				base = inverse_calc[target][row];
-				for(int col = 0; col < 2 * sim.S; col++) {
-					inverse_calc[target][col] -= inverse_calc[row][col] * base;
-				}
-			}
-		}
-		// Second pass for reduced row echilon form
-		for(int row = sim.S - 1; row >= 0; row--) {
-			for(int target = 0; target < row; target++) {
-				double base = inverse_calc[target][row];
-				for(int col = row; col < 2 * sim.S; col++) {
-					inverse_calc[target][col] -= inverse_calc[row][col] * base;
-				}
-			}
-		}
+
+		// Reduce to reduced row echilon form
+		GaussianElimination solver = new GaussianElimination(sim.S, 2 * sim.S);
+		solver.load(inverse_calc);
+		inverse_calc = solver.rref();
+
 		// Extract inverse matrix
 		double[][] inverse = new double[sim.S][sim.S];
 		for(int row = 0; row < sim.S; row++) {

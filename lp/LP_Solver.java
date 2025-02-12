@@ -50,9 +50,9 @@ public interface LP_Solver {
 	public double value();
 
 	/**
-	 * Returns a matrix representing the space of optimal parameters. 
+	 * Returns an optimal solution to the optimization problem. 
 	 */
-	public double[][] parameters();
+	public double[] parameters();
 
 }
 

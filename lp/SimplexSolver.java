@@ -32,7 +32,7 @@ public class SimplexSolver implements LP_Solver {
 
 	/* Stores output for collection. Assumes maximization. */
 	protected boolean infeasible, unbounded;
-	protected double[][] params;
+	protected double[] params;
 	protected double output;
 
 	/* Dictionary used for calculations */
@@ -317,7 +317,6 @@ public class SimplexSolver implements LP_Solver {
 		update();
 
 		output = dictionary[objective_index][constant_index];
-		params = new double[0][];
 
 		for(int var = 0; var < constant_index; var++) {
 			if(dictionary[objective_index][var] > 0) {
@@ -325,8 +324,18 @@ public class SimplexSolver implements LP_Solver {
 				break;
 			}
 		}
+		if(infeasible || unbounded) {
+			return false;
+		} else {
+			params = new double[variable_count];
+			for(int var = 0; var < constraint_count; var++) {
+				if(basis[var] < variable_count) {
+					params[basis[var]] = dictionary[var][constant_index];
+				}
+			}
 
-		return !infeasible && !unbounded;
+			return true;
+		}
 	}
 
 	@Override
@@ -360,7 +369,7 @@ public class SimplexSolver implements LP_Solver {
 	}
 
 	@Override
-	public double[][] parameters() {
+	public double[] parameters() {
 		if(!infeasible && !unbounded && params == null) {
 			throw new RuntimeException("Solve problem before polling solution");
 		}
@@ -371,12 +380,9 @@ public class SimplexSolver implements LP_Solver {
 			throw new RuntimeException("Attempted to describe unbounded solution");
 		}
 
-		double[][] out = new double[params.length][];
+		double[] out = new double[params.length];
 		for(int row = 0; row < out.length; row++) {
-			out[row] = new double[ params[row].length ];
-			for(int col = 0; col < out[row].length; col++) {
-				out[row][col] = params[row][col];
-			}
+			out[row] = params[row];
 		}
 		return out;
 	}

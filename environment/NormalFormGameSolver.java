@@ -1,6 +1,6 @@
 package apple_lib.environment;
 
-import apple_lib.function.activation.SoftmaxFunction;
+import apple_lib.function.VectorFunction;
 
 /**
  * Solver for normal form games. Contains various algorithms. 
@@ -104,7 +104,7 @@ public class NormalFormGameSolver {
 		double[][] parameters = new double[sim.I][];
 		for(int player = 0; player < sim.I; player++) {
 			parameters[player] = new double[sim.A[player]];
-			output[player] = SoftmaxFunction.implementation.pass(parameters[player]);
+			output[player] = VectorFunction.softmax.pass(parameters[player]);
 		}
 
 		for(int iteration = 1; iteration <= K; iteration++) {
@@ -134,7 +134,7 @@ public class NormalFormGameSolver {
 					}
 				}
 
-				double[][] backpropogate = SoftmaxFunction.implementation.differentiate(parameters[player], output[player]);
+				double[][] backpropogate = VectorFunction.softmax.backpropagate(parameters[player]);
 				for(int action = 0; action < sim.A[player]; action++) {
 					for(int deriv = 0; deriv < sim.A[player]; deriv++) {
 						parameters[player][action] += alpha * backpropogate[deriv][action] * gradient[deriv];
@@ -143,7 +143,7 @@ public class NormalFormGameSolver {
 			}
 
 			for(int player = 0; player < sim.I; player++) {
-				output[player] = SoftmaxFunction.implementation.pass(parameters[player]);
+				output[player] = VectorFunction.softmax.pass(parameters[player]);
 			}
 		}
 

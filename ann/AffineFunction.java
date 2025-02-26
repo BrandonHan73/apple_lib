@@ -29,7 +29,7 @@ public class AffineFunction extends VectorFunction {
 		parameters = new double[input_count + 1][output_count];
 
 		Random rng = new Random();
-		double std = 1;
+		double std = 1 / Math.sqrt(inputs);
 		for(int input = 0; input < input_count; input++) {
 			for(int output = 0; output < output_count; output++) {
 				parameters[input][output] = rng.nextGaussian(0, std);

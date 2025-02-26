@@ -161,7 +161,7 @@ public abstract class VectorFunction {
 				if(Double.isInfinite(output[i])) {
 					output[i] = 0;
 				} else {
-					output[i] = 1 / (1 - output[i]);
+					output[i] = 1 / (1 + output[i]);
 				}
 			}
 			return output;

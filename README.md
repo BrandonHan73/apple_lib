@@ -11,7 +11,7 @@ use Apple Lib in your own projects, simply add apple_lib.jar to your class path.
 
 ## Contents
 
- - [Neural networks](network/README.md)
+ - [Neural networks](ann/README.md)
  - [Linear programming](lp/README.md)
  - Function outlines, mostly used for artificial neural networks 
 

@@ -28,14 +28,6 @@ public class FunctionSeriesOptimizer extends FunctionOptimizer {
 	////////////////////////////////////////////////////////// METHODS /////////////////////////////////////////////////////////
 
 	@Override
-	public void set_learning_rate(double val) {
-		super.set_learning_rate(val);
-		for(FunctionOptimizer opt : optimizers) {
-			opt.set_learning_rate(val);
-		}
-	}
-
-	@Override
 	public double[][] update_parameters(double[][] inputs, double[][] deriv) {
 		int N = inputs.length;
 
@@ -53,7 +45,6 @@ public class FunctionSeriesOptimizer extends FunctionOptimizer {
 			deriv = optimizers[layer].update_parameters(input_chain[layer], deriv);
 		}
 
-		training_time++;
 		return deriv;
 	}
 

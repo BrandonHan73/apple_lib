@@ -12,11 +12,10 @@ public class FunctionOptimizer {
 
 	/* Target function */
 	protected VectorFunction target;
-	 
-	/* Learning rate */
-	protected double learning_rate;
-	protected int training_time;
 
+	/* Unit optimizers */
+	protected DoubleOptimizer[] optimizers;
+	 
 	/////////////////////////////////////////////////////// CONSTRUCTORS ///////////////////////////////////////////////////////
 
 	/**
@@ -25,8 +24,7 @@ public class FunctionOptimizer {
 	public FunctionOptimizer(VectorFunction func) {
 		target = func;
 
-		learning_rate = 0.001;
-		training_time = 0;
+		optimizers = new DoubleOptimizer[0];
 	}
 
 	////////////////////////////////////////////////////////// STATIC //////////////////////////////////////////////////////////
@@ -34,25 +32,64 @@ public class FunctionOptimizer {
 	public static FunctionOptimizer create_optimizer(VectorFunction func) {
 		if(func instanceof AffineFunction) return new AffineFunctionOptimizer((AffineFunction) func);
 		if(func instanceof FunctionSeries) return new FunctionSeriesOptimizer((FunctionSeries) func);
+		if(func instanceof ResidualBlock) return new ResidualBlockOptimizer((ResidualBlock) func);
 		else return new FunctionOptimizer(func);
 	}
 
 	////////////////////////////////////////////////////////// METHODS /////////////////////////////////////////////////////////
 
 	/**
-	 * Sets the learning rate if training has not started yet
+	 * Sets the optimization strategy to Adam if training has not started yet
 	 */
-	public void set_learning_rate(double val) {
-		if(training_time == 0) {
-			learning_rate = val;
+	public void use_adam(double first_moment_bias, double second_moment_bias, double protection) {
+		for(DoubleOptimizer opt : optimizers) {
+			opt.use_adam(first_moment_bias, second_moment_bias, protection);
 		}
 	}
 
 	/**
-	 * Determines the current learning rate based on the calculation algorithm and the set hyperparameters. 
+	 * Sets the optimization strategy to RMSProp if training has not started yet
 	 */
-	protected double get_learning_rate() {
-		return learning_rate;
+	public void use_rmsprop(double protection, double decay) {
+		for(DoubleOptimizer opt : optimizers) {
+			opt.use_rmsprop(protection, decay);
+		}
+	}
+
+	/**
+	 * Sets the optimization strategy to ADAGrad if training has not started yet
+	 */
+	public void use_adagrad(double protection) {
+		for(DoubleOptimizer opt : optimizers) {
+			opt.use_adagrad(protection);
+		}
+	}
+
+	/**
+	 * Sets the optimization strategy to SGD+momentum if training has not started yet
+	 */
+	public void use_sgd_momentum(double decay) {
+		for(DoubleOptimizer opt : optimizers) {
+			opt.use_sgd_momentum(decay);
+		}
+	}
+
+	/**
+	 * Sets the optimization strategy to stochastic gradient descent if training has not started yet
+	 */
+	public void use_sgd() {
+		for(DoubleOptimizer opt : optimizers) {
+			opt.use_sgd();
+		}
+	}
+
+	/**
+	 * Sets the learning rate if training has not started yet
+	 */
+	public void set_learning_rate(double val) {
+		for(DoubleOptimizer opt : optimizers) {
+			opt.set_learning_rate(val);
+		}
 	}
 
 	/**

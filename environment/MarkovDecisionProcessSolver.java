@@ -69,6 +69,7 @@ public class MarkovDecisionProcessSolver {
 			}
 			value = update;
 		}
+
 		return policy(value);
 	}
 

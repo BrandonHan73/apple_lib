@@ -203,5 +203,27 @@ public abstract class VectorFunction {
 		}
 	};
 
+	/* Half-logarithmic half-linear function */
+	public final static VectorFunction loglin = new VectorFunction() {
+		@Override
+		public double[] pass(double[] input) {
+			int N = input.length;
+			double[] output = new double[N];
+			for(int i = 0; i < N; i++) {
+				output[i] = input[i] >= 0 ? input[i] : -Math.log(1 - input[i]);
+			}
+			return output;
+		}
+		@Override
+		public double[][] backpropagate(double[] input) {
+			int N = input.length;
+			double[][] output = new double[N][N];
+			for(int i = 0; i < N; i++) {
+				output[i][i] = input[i] >= 0 ? 1 : 1 / (1 - input[i]);
+			}
+			return output;
+		}
+	};
+
 }
 

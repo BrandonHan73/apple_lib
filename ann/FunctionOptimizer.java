@@ -1,5 +1,6 @@
 package apple_lib.ann;
 
+import apple_lib.function.ScalarFunction;
 import apple_lib.function.VectorFunction;
 
 /**
@@ -33,6 +34,7 @@ public class FunctionOptimizer {
 		if(func instanceof AffineFunction) return new AffineFunctionOptimizer((AffineFunction) func);
 		if(func instanceof FunctionSeries) return new FunctionSeriesOptimizer((FunctionSeries) func);
 		if(func instanceof ResidualBlock) return new ResidualBlockOptimizer((ResidualBlock) func);
+		if(func instanceof ScalarFunction) return new ScalarFunctionOptimizer((ScalarFunction) func);
 		else return new FunctionOptimizer(func);
 	}
 

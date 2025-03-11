@@ -30,12 +30,12 @@ public class FunctionSeriesOptimizer extends FunctionOptimizer {
 	@Override
 	public double[][] update_parameters(double[][] inputs, double[][] deriv) {
 		int N = inputs.length;
-
+		
 		// Load inputs
 		double[][][] input_chain = new double[optimizers.length][N][];
 		input_chain[0] = inputs;
-		for(int item = 0; item < N; item++) {
-			for(int layer = 1; layer < optimizers.length; layer++) {
+		for(int layer = 1; layer < optimizers.length; layer++) {
+			for(int item = 0; item < N; item++) {
 				input_chain[layer][item] = optimizers[layer - 1].target.pass(input_chain[layer - 1][item]);
 			}
 		}

@@ -37,23 +37,23 @@ public class AffineFunctionOptimizer extends FunctionOptimizer {
 		AffineFunction function = (AffineFunction) target;
 
 		// Determine derivatives with respect to inputs and parameters
-		double[][] param_deriv = new double[function.input_count + 1][function.output_count];
-		for(int item = 0; item < N; item++) {
-			for(int out = 0; out < function.output_count; out++) {
+		double[] param_deriv;
+		double[][] input_deriv = new double[N][function.input_count];
+		for(int out = 0; out < function.output_count; out++) {
+			param_deriv = new double[function.input_count + 1];
+			for(int item = 0; item < N; item++) {
 				for(int in = 0; in < function.input_count; in++) {
-					param_deriv[in][out] += deriv[item][out] * inputs[item][in];
+					param_deriv[in] += deriv[item][out] * inputs[item][in];
+					input_deriv[item][in] += deriv[item][out] * function.parameters[in][out];
 				}
-				param_deriv[function.input_count][out] += deriv[item][out];
+				param_deriv[function.input_count] += deriv[item][out];
+			}
+			for(int in = 0; in <= function.input_count; in++) {
+				function.parameters[in][out] += optimizers[in][out].calculate_update(param_deriv[in]);
 			}
 		}
 
-		for(int in = 0; in < function.input_count; in++) {
-			for(int out = 0; out < function.output_count; out++) {
-				function.parameters[in][out] += optimizers[in][out].calculate_update(param_deriv[in][out]);
-			}
-		}
-
-		return super.update_parameters(inputs, deriv);
+		return input_deriv;
 	}
 
 

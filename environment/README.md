@@ -9,7 +9,7 @@ defines the state set, action set, and discount factor. States and actions are r
 counting up. The validity of the class definition can be checked using the provided check method. 
 
     MarkovDecisionProcess mdp = ...;
-    if(!MarkovDecisionProcess.check(mdp)) throw new RuntimeException();
+    if(!MarkovDecisionProcess.check(mdp, probability_tolerance, min_reward, max_reward)) throw new RuntimeException();
 
 ### Solving an MDP
 
@@ -24,6 +24,8 @@ unstable, so the LP algorithms for solving MDP's may not provide an accurate res
     int[] pol_2 = solver.policy_iteration(iterations);
     int[] pol_3 = solver.primal_lp();
     int[] pol_4 = solver.dual_lp();
+
+    int action_taken = policy[state];
 
 We can also determine the value function associated with a given policy. This can be useful for evaluating performance. 
 
@@ -74,4 +76,72 @@ actions indexed by state, as given by the solvers. Using this method will not re
     int[] state_trajectory = sim.state_trajectory();
     int[] action_trajectory = sim.action_trajectory();
     double[] reward_trajectory = sim.reward_trajectory();
+
+## Finite Horizon Markov Decision Process
+
+An alternative MDP is the finite horizon setting. This setting does not include a discount factor, but maintains a finite
+horizon. The transition and reward functions become time dependent. 
+
+    FiniteHorizonMarkovDecisionProcess mdp = ...;
+    if(!FiniteHorizonMarkovDecisionProcess.check(mdp, probability_tolerance, min_reward, max_reward)) throw new RuntimeException();
+
+### Solving a Finite Horizon MDP
+
+Solving a finite horizon MDP uses backward induction. The policy provided by the solvers are deterministic. Policies are
+represented by two-dimensional integer arrays, where the time step and state are used as indices. 
+
+    FiniteHorizonMarkovDecisionProcessSolver solver = new FiniteHorizonMarkovDecisionProcess(mdp);
+    
+    int[][] policy = solver.backward_induction();
+
+    int action_taken = policy[time_step][state];
+
+## Multi-Armed Bandit
+
+This library also includes an interface for multi-armed bandits. 
+
+    MultiArmedBandit bandit = ...;
+
+The `MultiArmedBandit` class contains a static method that takes an empirical estimate for the expected reward produced by each
+action. To use this tool, provide the bandit and the number of samples per action. Users should beware of numerical stability in
+cases where a very large sample size is used. 
+
+    double[] mu = MultiArmedBandit.mu(bandit, 128);
+
+### Solving a Multi-Armed Bandit
+
+When creating a solver for multi-armed bandits, the user may provide the expected reward for each action if these expectations
+are known. Only a subset of algorithms provided will use these expectations. Providing the expected rewards is not required. If
+they are not provided but are required by a method call, the empirical estimations will be used. Users can optionally set the
+sample size for the empirical estimations. 
+
+    // Providing the true expected rewards for each action
+    MultiArmedBanditSolver solver_1 = new MultiArmedBanditSolver(bandit, mu);
+
+    // Setting the sample size for an empirical estimate
+    MultiArmedBanditSolver solver_2 = new MultiArmedBanditSolver(bandit, 128);
+
+    // Using the default sample size
+    MultiArmedBanditSolver solver_3 = new MultiArmedBanditSolver(bandit);
+
+The solver uses the expected rewards for each action to determine the optimal action. 
+
+    int optimal = solver.optimal_action();
+
+More interestingly, the solver can apply the UCB algorithm. It will return the actions taken at each iteration as an array of
+integers. To use the UCB algorithm, users must provide the iteration count and the scale factor for exploration. 
+
+    int[] history = solver.ucb(interations, exploration_weight);
+
+Once the trajectory has been created, the solver can calculate the regret for each action. There are also options to determine
+the average and total regret. These three methods take an array of integers as the trajectory and return an array of doubles. 
+
+    // Per action regret
+    double[] regret = solver.total_regret(history);
+
+    // Summation of regret for all past actions at each point in the trajectory
+    double[] total_regret = solver.total_regret(history);
+
+    // Average regret of past actions at each point in the trajectory
+    double[] avg_regret = solver.average_regret(history);
 

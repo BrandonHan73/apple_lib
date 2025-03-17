@@ -1,5 +1,9 @@
 package apple_lib.function;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
 /**
  * Represents a function mapping an n-dimensional input to an m-dimensional output. 
  */
@@ -11,9 +15,100 @@ public abstract class VectorFunction {
 	public abstract double[] pass(double[] input);
 
 	/**
-	 * Backpropogate. Derivative of output i with respect to output j is given by output[i][j]. 
+	 * Backpropagate. Derivative of output i with respect to output j is given by output[i][j]. 
 	 */
 	public abstract double[][] backpropagate(double[] input);
+
+	/**
+	 * Passes multiple inputs at the same time. 
+	 */
+	public double[][] pass_all(double[][] inputs) {
+		int thread_count = Math.min(inputs.length, Runtime.getRuntime().availableProcessors());
+		ExecutorService service = Executors.newFixedThreadPool(thread_count);
+
+		int N = inputs.length;
+		double[][] outputs = new double[N][];
+		for(int thread = 0; thread < thread_count; thread++) {
+			int start = (N * thread) / thread_count;
+			int end = (N * (thread + 1)) / thread_count;
+
+			ForwardPassUnit unit = new ForwardPassUnit(inputs, outputs, start, end);
+			service.execute(unit);
+		}
+
+		service.shutdown();
+		try {
+			service.awaitTermination(256, TimeUnit.DAYS);
+		} catch(InterruptedException ie) {
+			throw new RuntimeException();
+		}
+
+		return outputs;
+	}
+
+	/**
+	 * Determines the derivative at multiple input points. 
+	 */
+	public double[][][] backpropagate_all(double[][] inputs) {
+		int thread_count = Math.min(inputs.length, Runtime.getRuntime().availableProcessors());
+		ExecutorService service = Executors.newFixedThreadPool(thread_count);
+
+		int N = inputs.length;
+		double[][][] outputs = new double[N][][];
+		for(int thread = 0; thread < thread_count; thread++) {
+			int start = (N * thread) / thread_count;
+			int end = (N * (thread + 1)) / thread_count;
+
+			BackwardPassUnit unit = new BackwardPassUnit(inputs, outputs, start, end);
+			service.execute(unit);
+		}
+
+		service.shutdown();
+		try {
+			service.awaitTermination(256, TimeUnit.DAYS);
+		} catch(InterruptedException ie) {
+			throw new RuntimeException();
+		}
+
+		return outputs;
+	}
+
+	////////////////////////////////////////////////////// MULTITHREADING //////////////////////////////////////////////////////
+
+	protected class ForwardPassUnit implements Runnable {
+		double[][] inputs, outputs;
+		int start, stop;
+		ForwardPassUnit(double[][] in, double[][] out, int begin, int end) {
+			inputs = in;
+			outputs = out;
+			start = begin;
+			stop = end;
+		}
+		@Override
+		public void run() {
+			for(int item = start; item < stop; item++) {
+				outputs[item] = pass(inputs[item]);
+			}
+		}
+	}
+
+	protected class BackwardPassUnit implements Runnable {
+		double[][] inputs;
+		double[][][] outputs;
+		int start, stop;
+		BackwardPassUnit(double[][] in, double[][][] out, int begin, int end) {
+			inputs = in;
+			outputs = out;
+			start = begin;
+			stop = end;
+		}
+		@Override
+		public void run() {
+			for(int item = start; item < stop; item++) {
+				outputs[item] = backpropagate(inputs[item]);
+			}
+		}
+	}
 
 	///////////////////////////////////////////////////// COMMON FUNCTIONS /////////////////////////////////////////////////////
 

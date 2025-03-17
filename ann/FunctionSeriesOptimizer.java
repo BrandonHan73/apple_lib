@@ -35,9 +35,7 @@ public class FunctionSeriesOptimizer extends FunctionOptimizer {
 		double[][][] input_chain = new double[optimizers.length][N][];
 		input_chain[0] = inputs;
 		for(int layer = 1; layer < optimizers.length; layer++) {
-			for(int item = 0; item < N; item++) {
-				input_chain[layer][item] = optimizers[layer - 1].target.pass(input_chain[layer - 1][item]);
-			}
+			input_chain[layer] = optimizers[layer - 1].target.pass_all(input_chain[layer - 1]);
 		}
 
 		// Backpropagate through all layers

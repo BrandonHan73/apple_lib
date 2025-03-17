@@ -52,10 +52,11 @@ public class ClassifierOptimizer {
 
 	public double[][] update_parameters(double[][] inputs, int[] labels) {
 		int batch_size = inputs.length;
+		double[][] outputs = optimizer.target.pass_all(inputs);
 		// Calculate derivatives
 		double[][] deriv = new double[batch_size][];
 		for(int item = 0; item < batch_size; item++) {
-			double[] activation = optimizer.target.pass(inputs[item]);
+			double[] activation = outputs[item];
 			deriv[item] = new double[activation.length];
 			deriv[item][ labels[item] ] = -1 / (activation[ labels[item] ] + 0.001) / batch_size;
 		}

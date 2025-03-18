@@ -1,5 +1,9 @@
 package apple_lib.ann;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
 import apple_lib.function.ScalarFunction;
 import apple_lib.function.VectorFunction;
 
@@ -100,18 +104,59 @@ public class FunctionOptimizer {
 	public double[][] update_parameters(double[][] inputs, double[][] deriv) {
 		int N = inputs.length;
 
+		double[][][] backpropagate_derivatives = target.backpropagate_all(inputs);
 		double[][] input_deriv = new double[N][];
-		for(int item = 0; item < N; item++) {
-			double[][] backpropagate = target.backpropagate(inputs[item]);
-			input_deriv[item] = new double[inputs[item].length];
-			for(int out = 0; out < backpropagate.length; out++) {
-				for(int in = 0; in < inputs[item].length; in++) {
-					input_deriv[item][in] += deriv[item][out] * backpropagate[out][in];
-				}
-			}
+
+		int thread_count = Math.min(Runtime.getRuntime().availableProcessors(), inputs.length);
+		ExecutorService service = Executors.newFixedThreadPool(thread_count);
+		for(int thread = 0; thread < thread_count; thread++) {
+			int start = (N * thread) / thread_count;
+			int end = (N * (thread + 1)) / thread_count;
+
+			BackpropagateUnit unit = new BackpropagateUnit(inputs, deriv, backpropagate_derivatives, input_deriv, start, end);
+			service.execute(unit);
+		}
+
+		service.shutdown();
+		try {
+			service.awaitTermination(256, TimeUnit.DAYS);
+		} catch(InterruptedException ie) {
+			throw new RuntimeException();
 		}
 
 		return input_deriv;
+	}
+
+	// MULTITHREADING //
+	
+	protected class BackpropagateUnit implements Runnable {
+		double[][][] mid_deriv;
+		double[][] out_deriv, in_deriv, func_inputs;
+		int start, stop;
+		BackpropagateUnit(double[][] inputs, double[][] out, double[][][] mid, double[][] in, int begin, int end) {
+			func_inputs = inputs;
+			out_deriv = out;
+			mid_deriv = mid;
+			in_deriv = in;
+			start = begin;
+			stop = end;
+		}
+		@Override
+		public void run() {
+			for(int item = start; item < stop; item++) {
+				double[] out = out_deriv[item];
+				double[][] mid = mid_deriv[item];
+				double[] in = new double[func_inputs[item].length];
+
+				for(int i = 0; i < in.length; i++) {
+					for(int o = 0; o < out.length; o++) {
+						in[i] += mid[o][i] * out[o];
+					}
+				}
+
+				in_deriv[item] = in;
+			}
+		}
 	}
 
 }

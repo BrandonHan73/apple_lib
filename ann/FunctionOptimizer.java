@@ -39,6 +39,7 @@ public class FunctionOptimizer {
 		if(func instanceof FunctionSeries) return new FunctionSeriesOptimizer((FunctionSeries) func);
 		if(func instanceof ResidualBlock) return new ResidualBlockOptimizer((ResidualBlock) func);
 		if(func instanceof ScalarFunction) return new ScalarFunctionOptimizer((ScalarFunction) func);
+		if(func instanceof BatchNormalization) return new BatchNormalizationOptimizer((BatchNormalization) func);
 		else return new FunctionOptimizer(func);
 	}
 
@@ -129,7 +130,7 @@ public class FunctionOptimizer {
 
 	// MULTITHREADING //
 	
-	protected class BackpropagateUnit implements Runnable {
+	protected static class BackpropagateUnit implements Runnable {
 		double[][][] mid_deriv;
 		double[][] out_deriv, in_deriv, func_inputs;
 		int start, stop;

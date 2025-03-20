@@ -17,7 +17,7 @@ public class AffineFunctionOptimizer extends FunctionOptimizer {
 	/////////////////////////////////////////////////////// CONSTRUCTORS ///////////////////////////////////////////////////////
 
 	/**
-	 * Basic constructor. Fixes the input and output sizes.
+	 * Basic constructor
 	 */
 	public AffineFunctionOptimizer(AffineFunction target) {
 		super(target);
@@ -94,8 +94,8 @@ public class AffineFunctionOptimizer extends FunctionOptimizer {
 		public void run() {
 			AffineFunction function = (AffineFunction) target;
 
-			for(int out = 0; out < function.output_count; out++) {
-				for(int item = begin; item < end; item++) {
+			for(int item = begin; item < end; item++) {
+				for(int out = 0; out < function.output_count; out++) {
 					for(int in = 0; in < function.input_count; in++) {
 						update[in][out] += derivatives[item][out] * inputs[item][in];
 						backpropagate[item][in] += derivatives[item][out] * function.parameters[in][out];

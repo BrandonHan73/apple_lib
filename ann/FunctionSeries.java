@@ -65,5 +65,14 @@ public class FunctionSeries extends VectorFunction {
 		return deriv_next;
 	}
 
+	@Override
+	public double[][] pass_all(double[][] input) {
+		double[][] output = input;
+		for(VectorFunction layer : functions) {
+			output = layer.pass_all(output);
+		}
+		return output;
+	}
+
 }
 

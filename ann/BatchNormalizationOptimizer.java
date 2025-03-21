@@ -52,8 +52,8 @@ public class BatchNormalizationOptimizer extends FunctionOptimizer {
 		int thread_count = Math.min(Runtime.getRuntime().availableProcessors(), func.dimensions);
 		ExecutorService service = Executors.newFixedThreadPool(thread_count);
 		for(int thread = 0; thread < thread_count; thread++) {
-			int start = (inputs.length * thread) / thread_count;
-			int end = (inputs.length * (thread + 1)) / thread_count;
+			int start = (func.dimensions * thread) / thread_count;
+			int end = (func.dimensions * (thread + 1)) / thread_count;
 
 			BackpropagationUnit unit = new BackpropagationUnit(inputs, deriv, outputs, start, end);
 			service.execute(unit);
@@ -85,6 +85,7 @@ public class BatchNormalizationOptimizer extends FunctionOptimizer {
 		public void run() {
 			BatchNormalization func = (BatchNormalization) target;
 			int N = inputs.length;
+			double[] shift = new double[N];
 			for(int dim = start; dim < stop; dim++) {
 				double mean = 0, second = 0;
 				for(double[] item : inputs) {
@@ -96,7 +97,6 @@ public class BatchNormalizationOptimizer extends FunctionOptimizer {
 				double std = Math.sqrt(variance);
 
 				double output_std_deriv = 0, output_mean_deriv = 0;
-				double[] shift = new double[N];
 
 				double std_deriv = 0, mean_deriv = 0;
 				for(int item = 0; item < N; item++) {

@@ -97,27 +97,19 @@ public class BatchNormalizationOptimizer extends FunctionOptimizer {
 				double std = Math.sqrt(variance);
 
 				double output_std_deriv = 0, output_mean_deriv = 0;
-				double variance_deriv = 0, mean_deriv = 0, shift_sum = 0;
+				double variance_deriv = 0, mean_deriv = 0;
 				for(int item = 0; item < N; item++) {
 					shift[item] = inputs[item][dim] - mean;
-					double shift_deriv = out_derivs[item][dim] * func.output_std[dim];
 
 					output_std_deriv += out_derivs[item][dim] * shift[item];
 					output_mean_deriv += out_derivs[item][dim];
 
-					variance_deriv -= shift_deriv * shift[item];
-					mean_deriv -= shift_deriv;
-					in_derivs[item][dim] = shift_deriv / std;
-
-					shift_sum += inputs[item][dim];
+					variance_deriv -= out_derivs[item][dim] * shift[item];
+					mean_deriv -= out_derivs[item][dim];
 				}
-				shift_sum -= N * mean;
-
-				variance_deriv /= N * variance * std;
-				mean_deriv = mean_deriv / std - variance_deriv * shift_sum;
 
 				for(int item = 0; item < N; item++) {
-					in_derivs[item][dim] += variance_deriv * shift[item] + mean_deriv / N;
+					in_derivs[item][dim] = func.output_std[dim] * (out_derivs[item][dim] + (variance_deriv * shift[item] / variance + mean_deriv ) / N) / std;
 				}
 
 				func.output_mean[dim] += mean_optimizers[dim].calculate_update(output_mean_deriv);

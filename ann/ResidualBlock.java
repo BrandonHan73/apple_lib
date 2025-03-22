@@ -32,8 +32,8 @@ public class ResidualBlock extends VectorFunction {
 	}
 
 	@Override
-	public double[][] backpropagate(double[] input) {
-		double[][] output = function.backpropagate(input);
+	public double[][] gradient(double[] input) {
+		double[][] output = function.gradient(input);
 		for(int out = 0; out < output.length; out++) {
 			output[out][out] += 1;
 		}

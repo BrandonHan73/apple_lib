@@ -15,10 +15,10 @@ public abstract class ScalarFunction extends VectorFunction {
 	}
 
 	@Override
-	public double[][] backpropagate(double[] input) {
+	public double[][] gradient(double[] input) {
 		double[][] out = new double[input.length][input.length];
 		for(int i = 0; i < out.length; i++) {
-			out[i][i] = backpropagate(input[i]);
+			out[i][i] = gradient(input[i]);
 		}
 		return out;
 	}
@@ -31,7 +31,7 @@ public abstract class ScalarFunction extends VectorFunction {
 	/**
 	 * Calculates the derivative
 	 */
-	public abstract double backpropagate(double input);
+	public abstract double gradient(double input);
 
 	///////////////////////////////////////////////////// COMMON FUNCTIONS /////////////////////////////////////////////////////
 
@@ -43,7 +43,7 @@ public abstract class ScalarFunction extends VectorFunction {
 			return input > 0 ? input : 0;
 		}
 		@Override
-		public double backpropagate(double input) {
+		public double gradient(double input) {
 			return input > 0 ? 1 : 0;
 		}
 	};
@@ -58,7 +58,7 @@ public abstract class ScalarFunction extends VectorFunction {
 			return Double.isInfinite(exp) ? input : Math.log(1 + exp);
 		}
 		@Override
-		public double backpropagate(double input) {
+		public double gradient(double input) {
 			return logistic.pass(input);
 		}
 	};
@@ -73,7 +73,7 @@ public abstract class ScalarFunction extends VectorFunction {
 			return Double.isInfinite(pos_exp) ? 1 : Double.isInfinite(neg_exp) ? -1 : (pos_exp - neg_exp) / (pos_exp + neg_exp);
 		}
 		@Override
-		public double backpropagate(double input) {
+		public double gradient(double input) {
 			double activation = pass(input);
 			return 1 - activation * activation;
 		}
@@ -89,7 +89,7 @@ public abstract class ScalarFunction extends VectorFunction {
 			return Double.isInfinite(exp) ? 0 : 1 / (1 + exp);
 		}
 		@Override
-		public double backpropagate(double input) {
+		public double gradient(double input) {
 			double activation = pass(input);
 			return activation * (1 - activation);
 		}
@@ -102,8 +102,8 @@ public abstract class ScalarFunction extends VectorFunction {
 			return logistic.pass(input) * input;
 		}
 		@Override
-		public double backpropagate(double input) {
-			return logistic.pass(input) + input * logistic.backpropagate(input);
+		public double gradient(double input) {
+			return logistic.pass(input) + input * logistic.gradient(input);
 		}
 	};
 
@@ -114,7 +114,7 @@ public abstract class ScalarFunction extends VectorFunction {
 			return input >= 0 ? input : -Math.log(1 - input);
 		}
 		@Override
-		public double backpropagate(double input) {
+		public double gradient(double input) {
 			return input >= 0 ? 1 : 1 / (1 - input);
 		}
 	};

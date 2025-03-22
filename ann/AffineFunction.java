@@ -52,7 +52,7 @@ public class AffineFunction extends VectorFunction {
 	}
 
 	@Override
-	public double[][] backpropagate(double[] input) {
+	public double[][] gradient(double[] input) {
 		double[][] output = new double[output_count][input_count];
 		for(int in = 0; in < input_count; in++) {
 			for(int out = 0; out < output_count; out++) {

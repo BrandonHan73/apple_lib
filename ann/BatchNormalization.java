@@ -58,7 +58,7 @@ public class BatchNormalization extends VectorFunction {
 	}
 
 	@Override
-	public double[][] backpropagate(double[] input) {
+	public double[][] gradient(double[] input) {
 		double[][] output = new double[dimensions][dimensions];
 		for(int dim = 0; dim < dimensions; dim++) {
 			output[dim][dim] = output_std[dim] / Math.sqrt(running_variance[dim] + std_div);
@@ -91,7 +91,7 @@ public class BatchNormalization extends VectorFunction {
 	}
 
 	@Override
-	public double[][][] backpropagate_all(double[][] inputs) {
+	public double[][][] gradient_all(double[][] inputs) {
 		throw new RuntimeException("Cannot be represented");
 	}
 

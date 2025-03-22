@@ -9,7 +9,7 @@ output with respect to each input is given in a two-dimensional matrix.
     double[] input = new double[] { ... };
 
     double[] activate = function.pass(input);
-    double[][] derivative = function.backpropagate(input);
+    double[][] derivative = function.gradient(input);
     
 The `VectorFunction` class also contains a few static instances of common activation functions. Subclass `ScalarFunction`
 performs elementwise operations and may be used to execute more efficiently. 

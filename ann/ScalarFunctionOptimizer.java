@@ -30,7 +30,7 @@ public class ScalarFunctionOptimizer extends FunctionOptimizer {
 		for(int item = 0; item < N; item++) {
 			input_deriv[item] = new double[inputs[item].length];
 			for(int in = 0; in < inputs[item].length; in++) {
-				input_deriv[item][in] += deriv[item][in] * target.backpropagate(inputs[item][in]);
+				input_deriv[item][in] += deriv[item][in] * target.gradient(inputs[item][in]);
 			}
 		}
 

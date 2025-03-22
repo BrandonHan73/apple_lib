@@ -37,7 +37,7 @@ public class FunctionSeries extends VectorFunction {
 	}
 
 	@Override
-	public double[][] backpropagate(double[] input) {
+	public double[][] gradient(double[] input) {
 		double[][] inputs = new double[functions.length][];
 		inputs[0] = input;
 		for(int layer = 1; layer < functions.length; layer++) {
@@ -46,10 +46,10 @@ public class FunctionSeries extends VectorFunction {
 		int output_size = functions[functions.length - 1].pass(inputs[functions.length - 1]).length;
 
 		// Store derivative of outputs with respect to current working layer
-		double[][] deriv_next = functions[functions.length - 1].backpropagate(inputs[functions.length - 1]);
+		double[][] deriv_next = functions[functions.length - 1].gradient(inputs[functions.length - 1]);
 		for(int layer = functions.length - 2; layer >= 0; layer--) {
 			// Store derivative of current layer outputs
-			double[][] deriv_curr = functions[layer].backpropagate(inputs[layer]);
+			double[][] deriv_curr = functions[layer].gradient(inputs[layer]);
 
 			// Matrix multiplication
 			double[][] new_deriv = new double[output_size][inputs[layer].length];

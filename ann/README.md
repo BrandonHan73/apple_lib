@@ -4,62 +4,115 @@
 Basic structures for machine learning and optimization. These `VectorFunction` subclasses are used to approximate intricate
 functions using neural networks
 
-## Affine Function
+## VectorFunction
 
-This is the basic linear classifier. It takes a given number of inputs and performs an affine transformation to create its
-output. 
+This is the base class for all neural networks. The `VectorFunction` provides the interface for passing inputs through the
+network and determining the gradient at a given input point. 
 
-    int inputs = 5, outputs = 3;
-    VectorFunction linear = new AffineFunction(inputs, outputs);
-    
+    VectorFunction func = ... ;
     double[] input = new double[] { ... };
-    double[] output = linear.pass(inputs);
 
-To train the function using gradient descent, use the `AffineFunctionOptimizer` class. These class of optimizers take a batch of
-inputs as an array. It also requires the gradient of the loss function with respect to the network outputs. Optimizers can be
-created using the static `create_optimizer` method. The default learning rate is set to 0.001. 
+    double[] output = func.pass(input);
+    double[][] gradient = func.gradient(input);
 
-    FunctionOptimizer opt = FunctionOptimizer.create_optimizer(linear);
-    opt.set_learning_rate(0.005);
+The output of the gradient method returns a two dimensional double array. `gradient[i][j]` represents the gradient of the ith
+output with respect to the jth input. 
+
+This class also allows multiple inputs to be passed at once. This is used for many different purposes, including multithreading,
+batch normalization, and recurrent networks. 
 
     double[][] inputs = new double[][] { ... };
-    double[][] derivatives = new double[][] { ... };
 
-    opt.update_parameters(inputs, derivatives);
+    double[][] outputs = func.pass_all(inputs);
+    double[][][] gradients = func.gradient_all(inputs);
 
-There is also the option to set the optimization algorithm. The following algorithms are supported. 
- - Stochastic gradient descent: `opt.use_sgd();`
- - Stochastic gradient descent with momentum: `opt.use_sgd_momentum(decay);`
- - ADAGrad: `opt.use_adagrad(min_denominator);`
- - RMSProp: `opt.use_rmsprop(min_denominator, decay);`
- - Adam: `opt.use_adam(first_moment_decay, second_moment_decay, min_denominator);`
-Here, `min_denominator` is added to any division operation to ensure no division by zero occurs. The default algorithm is Adam
-with parameters 0.9, 0.99, and 0.00000001. 
+The gradient method only supports functions where the output for a given input is independent of other inputs. Using the batch
+gradient method on functions like batch normalization or recurrent networks will throw an exception. 
 
-## Function Series
+### ScalarFunction
 
-To create multilayer networks, use the `FunctionSeries` class. Any number of `VectorFunction` objects can be connected in 
-series. The create_optimizer method can create a `FunctionOptimizer` that manages the full chain of functions. 
+This is a subclass of the main vector function. It is used for functions where each inputs affects exactly one output. This was
+added to speed up gradient and backpropagation calculations. 
 
-    VectorFunction series = new FunctionSeries(linear, VectorFunction.softmax);
-    FunctionOptimizer opt = FunctionOptimizer.create_optimizer(series);
+    ScalarFunction func = ... ;
+    double input = ... ;
+    
+    double output = func.pass(input);
+    double deriv = func.pass(input);
 
-For deeper networks, you may want to use residual blocks. A residual block can be made using any vector function. 
+The methods inherited from the vector function class can be used to evaluate multiple inputs at the same time. 
 
-    VectorFunction block = new ResidualBlock(series);
+### Standard Functions
 
-## Loss Functions
+Multiple commonly used activation functions have been provided as static fields. 
+ - `ScalarFunction.ReLU`
+ - `ScalarFunction.softplus`
+ - `ScalarFunction.tanh`
+ - `ScalarFunction.logistic`
+ - `ScalarFunction.swish`
+ - `ScalarFunction.loglin`
+ - `VectorFunction.softmax`
 
-Loss functions automatically calculate gradients and passes them into optimizers. Classifier optimizers are used for functions
-where outputs are bounded between 0 and 1. 
+There are also provided implementations of parameterized functions. Optimization for these functions are described in later
+sections. 
 
-    VectorFunction classifier = ...;
-    FunctionOptimizer optimizer = FunctionOptimizer.create_optimizer(classifier);
-    ClassifierOptimizer loss = new ClassifierOptimizer(optimizer);
+    VectorFunction linear = new AffineFunction( input_count, output_count);
+    BatchNormalization norm = new BatchNormalization( dimensions );
 
-    double[][] items = ...;
-    int[] labels = ...;
-    loss.update_parameters(items, labels);
+### Function Composition
 
-By default, the `ClassifierOptimizer` class uses the cross entropy loss. 
+For building complex neural networks, these vector functions must be connected in series. The function series class packages
+multiple vector functions and passes inputs through each layer sequentially. 
+
+    VectorFunction func = new FunctionSeries( layer1, layer2, ... );
+
+For deeper networks, a residual block implementation is also provided. Users are expected to manage layer sizes. 
+
+    VectorFunction block = new ResidualBlock( func );
+
+## Optimization
+
+Functions with parameters must be learned. The function optimizer class computes derivatives and updates the parameters of
+vector functions. To create a vector function, use the provided static method. 
+
+    FunctionOptimizer opt = FunctionOptimizer.create_optimizer( func );
+
+This static method determines what type of function has been provided and instantiates the correct optimizer type. To update
+the parameters of the function using this class, provide the inputs and the derivatives of the loss function with respect to
+the outputs. 
+
+    double[][] inputs = new double[][] { ... };
+    double[][] dloss = new double[][] { ... };
+
+    opt.update_parameters(inputs, dloss);
+
+The parameter update function also performs backpropagation on the provided derivatives and returns the derivative of the loss
+function with respect to the network inputs. 
+
+### Classification
+
+Standard loss functions are also implemented. For the classification problem, the classifier optimizer can be used. Instead of
+passing the derivatives to the optimizer, pass the correct labels. The optimizer will perform the derivative calculations using
+the set loss function. 
+
+    double[][] inputs = new double[][] { ... };
+    int[] labels = new int[] { ... };
+
+    ClassifierOptimizer opt = new ClassifierOptimizer( FunctionOptimizer.create_optimizer(func) );
+    opt.update_parameters(inputs, labels);
+
+### Hyperparameters
+
+Various learning algorithms have also been implemented. Users can choose which optimization technique to use and set the
+respective hyperparameters. 
+
+    opt.use_sgd();
+    opt.use_sgd_momentum( momentum );
+    opt.use_adagrad( div_protection );
+    opt.use_rmsprop( div_protection, decay );
+    opt.use_adam( first_bias, second_bias, div_protection );
+
+    opt.set_learning_rate( lr );
+
+Note that these work for both `FunctionOptimizer` and `ClassifierOptimizer`. 
 

@@ -105,7 +105,7 @@ public class FunctionOptimizer {
 	public double[][] update_parameters(double[][] inputs, double[][] deriv) {
 		int N = inputs.length;
 
-		double[][][] backpropagate_derivatives = target.backpropagate_all(inputs);
+		double[][][] backpropagate_derivatives = target.gradient_all(inputs);
 		double[][] input_deriv = new double[N][];
 
 		int thread_count = Math.min(Runtime.getRuntime().availableProcessors(), inputs.length);

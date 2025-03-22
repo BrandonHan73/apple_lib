@@ -134,7 +134,7 @@ public class NormalFormGameSolver {
 					}
 				}
 
-				double[][] backpropogate = VectorFunction.softmax.backpropagate(parameters[player]);
+				double[][] backpropogate = VectorFunction.softmax.gradient(parameters[player]);
 				for(int action = 0; action < sim.A[player]; action++) {
 					for(int deriv = 0; deriv < sim.A[player]; deriv++) {
 						parameters[player][action] += alpha * backpropogate[deriv][action] * gradient[deriv];

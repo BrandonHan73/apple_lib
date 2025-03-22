@@ -15,9 +15,9 @@ public abstract class VectorFunction {
 	public abstract double[] pass(double[] input);
 
 	/**
-	 * Backpropagate. Derivative of output i with respect to output j is given by output[i][j]. 
+	 * Calculate gradient. Derivative of output i with respect to output j is given by output[i][j]. 
 	 */
-	public abstract double[][] backpropagate(double[] input);
+	public abstract double[][] gradient(double[] input);
 
 	/**
 	 * Passes multiple inputs at the same time. 
@@ -49,7 +49,7 @@ public abstract class VectorFunction {
 	/**
 	 * Determines the derivative at multiple input points. 
 	 */
-	public double[][][] backpropagate_all(double[][] inputs) {
+	public double[][][] gradient_all(double[][] inputs) {
 		int thread_count = Math.min(inputs.length, Runtime.getRuntime().availableProcessors());
 		ExecutorService service = Executors.newFixedThreadPool(thread_count);
 
@@ -105,7 +105,7 @@ public abstract class VectorFunction {
 		@Override
 		public void run() {
 			for(int item = start; item < stop; item++) {
-				outputs[item] = backpropagate(inputs[item]);
+				outputs[item] = gradient(inputs[item]);
 			}
 		}
 	}
@@ -155,7 +155,7 @@ public abstract class VectorFunction {
 			return output;
 		}
 		@Override
-		public double[][] backpropagate(double[] input) {
+		public double[][] gradient(double[] input) {
 			int N = input.length;
 			double[] activation = pass(input);
 			double[][] output = new double[N][N];

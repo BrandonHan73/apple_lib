@@ -25,9 +25,15 @@ public class ResidualBlockOptimizer extends FunctionOptimizer {
 
 	@Override
 	public double[][] update_parameters(double[][] inputs, double[][] deriv) {
-		optimizer.update_parameters(inputs, deriv);
+		double[][] backprop = optimizer.update_parameters(inputs, deriv);
 
-		return super.update_parameters(inputs, deriv);
+		for(int item = 0; item < backprop.length; item++) {
+			for(int dim = 0; dim < backprop[item].length; dim++) {
+				backprop[item][dim] += deriv[item][dim];
+			}
+		}
+
+		return backprop;
 	}
 
 }

@@ -40,5 +40,31 @@ public class ResidualBlock extends VectorFunction {
 		return output;
 	}
 
+	@Override
+	public double[][] pass_all(double[][] inputs) {
+		double[][] outputs = function.pass_all(inputs);
+		
+		for(int item = 0; item < outputs.length; item++) {
+			for(int dim = 0; dim < outputs[item].length; dim++) {
+				outputs[item][dim] += inputs[item][dim];
+			}
+		}
+
+		return outputs;
+	}
+
+	@Override
+	public double[][][] gradient_all(double[][] inputs) {
+		double[][][] grad = function.gradient_all(inputs);
+		
+		for(int item = 0; item < grad.length; item++) {
+			for(int dim = 0; dim < grad[item].length; dim++) {
+				grad[item][dim][dim] += 1;
+			}
+		}
+
+		return grad;
+	}
+
 }
 
